@@ -1,40 +1,6 @@
 
 
 ---------------------------------------------------------------------------------------------------------------
-## L'affectation Pod
----------------------------------------------------------------------------------------------------------------
-1/ répertoriez les nodes du cluster:
-```bash
-$ kubectl get nodes 
-```
-
-2/ Choisir le node et ajoutez-y une étiquette:
-```bash
-$ kubectl label nodes <your-node-name> label1=var1
-```
-
-3/ Vérifiez que le node que vous avez choisi possède le nouveau label : 
-```bash
-$  kubectl get nodes --show-labels 
-```
-
-4/ Créer un pod planifié sur le node choisi grace au sélecteur de node (node qui a un label label1=var1):
-```yaml
-spec:
-  containers:
-  ...
-  nodeSelector:
-    label1: var1
-```
-
-5/ Vérifiez que le pod est bien en cours d'exécution sur le node choisi:
-```bash
-$ kubectl get pods --output=wide 
-```
-
-
-
----------------------------------------------------------------------------------------------------------------
 ## comptes de service
 ---------------------------------------------------------------------------------------------------------------
 Configurer les comptes de service pour les pods:
@@ -233,6 +199,7 @@ Notez que le conteneur init écrit le fichier index.html dans le répertoire rac
 ---------------------------------------------------------------------------------------------------------------
 ## Handlers
 ---------------------------------------------------------------------------------------------------------------
+https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/
 Attacher des gestionnaires aux événements du cycle de vie des conteneurs: (Handlers)
 Kubernetes prend en charge les événements postStart et preStop. 
 Kubernetes envoie l'événement postStart immédiatement après le démarrage d'un conteneur et envoie l'événement preStop immédiatement avant la fin du conteneur.
