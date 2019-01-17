@@ -378,6 +378,40 @@ $ kubectl annotate pods monpod description='my frontend'
 
 
 ---------------------------------------------------------------------------------------------------------------
+## Affectation Pod
+---------------------------------------------------------------------------------------------------------------
+1/ répertoriez les nodes du cluster:
+```bash
+$ kubectl get nodes 
+```
+
+2/ Choisir le node et ajoutez-y une étiquette:
+```bash
+$ kubectl label nodes <your-node-name> label1=var1
+```
+
+3/ Vérifiez que le node que vous avez choisi possède le nouveau label : 
+```bash
+$  kubectl get nodes --show-labels 
+```
+
+4/ Créer un pod planifié sur le node choisi grace au sélecteur de node (node qui a un label label1=var1):
+```yaml
+spec:
+  containers:
+  ...
+  nodeSelector:
+    label1: var1
+```
+
+5/ Vérifiez que le pod est bien en cours d'exécution sur le node choisi:
+```bash
+$ kubectl get pods --output=wide 
+```
+
+
+
+---------------------------------------------------------------------------------------------------------------
 ## QoS pod
 ---------------------------------------------------------------------------------------------------------------
 
