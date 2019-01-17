@@ -2185,19 +2185,6 @@ https://kubernetes.io/docs/tasks/run-application/run-replicated-stateful-applica
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ---
 ## Contrôle d'accès:
 Le stockage configuré avec un ID de groupe (GID) permet d'écrire uniquement par Pods en utilisant le même GID. Les GID non concordants ou manquants provoquent des erreurs d'autorisation refusées. Pour réduire le besoin de coordination avec les utilisateurs, un administrateur peut annoter un PersistentVolume avec un GID. Ensuite, le GID est automatiquement ajouté à tout Pod qui utilise le PersistentVolume.
@@ -2211,32 +2198,6 @@ metadata:
     pv.beta.kubernetes.io/gid: "1234"
 ```    
 Quand un Pod consomme un PersistentVolume qui a une annotation GID, le GID annoté est appliqué à tous les Conteneurs dans le Pod de la même manière que les GID spécifiés dans le contexte de sécurité du Pod.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
