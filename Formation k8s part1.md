@@ -98,6 +98,18 @@ $ kubectl get services --namespace=kube-system
 $ kubectl options
 ```
 
+8/ Répertoriez les StorageClasses du cluster:
+```bash
+$ kubectl get storageclass
+```
+
+9/ Baculer un node en mode maintenance ou normal:
+```bash
+$ kubectl drain $NODENAME
+$ kubectl uncordon $NODENAME
+```
+
+
 
 ### Utiliser Kubectl:
 Lorsque vous effectuez une opération sur plusieurs ressources, vous pouvez spécifier chaque ressource par type et nom ou spécifier un ou plusieurs fichiers:
