@@ -669,6 +669,24 @@ $ ls /projected-volume/
 
 
 ---------------------------------------------------------------------------------------------------------------
+## Contrôle d'accès:
+---------------------------------------------------------------------------------------------------------------
+Le stockage configuré avec un ID de groupe (GID) permet d'écrire uniquement par Pods en utilisant le même GID. Les GID non concordants ou manquants provoquent des erreurs d'autorisation refusées. Pour réduire le besoin de coordination avec les utilisateurs, un administrateur peut annoter un PersistentVolume avec un GID. Ensuite, le GID est automatiquement ajouté à tout Pod qui utilise le PersistentVolume.
+
+```yaml
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: pv1
+  annotations:
+    pv.beta.kubernetes.io/gid: "1234"
+```    
+Quand un Pod consomme un PersistentVolume qui a une annotation GID, le GID annoté est appliqué à tous les Conteneurs dans le Pod de la même manière que les GID spécifiés dans le contexte de sécurité du Pod.
+
+
+
+
+---------------------------------------------------------------------------------------------------------------
 ## Les secrets
 ---------------------------------------------------------------------------------------------------------------
 1/ Créer un secret (méthode 1):
@@ -759,4 +777,130 @@ spec:
        name: passsecret
        key: password
 ```
+
+
+---------------------------------------------------------------------------------------------------------------
+##RUN APPLICATION
+---------------------------------------------------------------------------------------------------------------
+### objet Kubernetes Deployment
+
+exécuter une application à l'aide d'un objet Kubernetes Deployment.
+Vous pouvez exécuter une application en créant un objet Déploiement Kubernetes et vous pouvez décrire un déploiement dans un fichier YAML.
+
+```yaml
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2 # tells deployment to run 2 pods matching the template
+  template: # create pods using pod definition in this template
+    metadata:
+      # unlike pod-nginx.yaml, the name is not included in the meta data as a unique name is
+      # generated from the deployment name
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.7.9
+        ports:
+        - containerPort: 80
+```
+
+Créez un déploiement basé sur le fichier YAML:
+```
+$ kubectl apply -f https://k8s.io/docs/tasks/run-application/deployment.yaml
+```
+
+Afficher des informations sur le déploiement:
+```
+$ kubectl describe deployment nginx-deployment 
+```
+
+Répertoriez les modules créés par le déploiement:
+```
+$  kubectl get pods -l app=nginx 
+```
+
+Afficher des informations sur un pod:
+```
+$  kubectl describe pod <pod-name> 
+```
+
+Mise à jour du déploiement:
+Vous pouvez mettre à jour le déploiement en appliquant un nouveau fichier YAML. 
+
+```yaml
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.8 # Update the version of nginx from 1.7.9 to 1.8
+        ports:
+        - containerPort: 80
+```
+
+Appliquez le nouveau fichier YAML:
+```
+$ kubectl apply -f https://k8s.io/docs/tasks/run-application/deployment-update.yaml 
+```
+
+Regardez le déploiement créer des pods avec de nouveaux noms et supprimer les anciens pods:
+```
+$  kubectl get pods -l app=nginx 
+```
+
+Scaling de l'application en augmentant le nombre de réplicas:
+Vous pouvez augmenter le nombre de pods dans votre déploiement en appliquant un nouveau fichier YAML.
+
+```yaml
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 4 # Update the replicas from 2 to 4
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.8
+        ports:
+        - containerPort: 80
+```
+
+appliquer les changements et vérifier les résultat:
+```
+$ kubectl get pods -l app=nginx
+```
+
+
+Supprimer un déploiement:
+```
+$  kubectl delete deployment nginx-deployment 
+```
+
+Le moyen préféré de créer une application répliquée consiste à utiliser un déploiement, qui à son tour utilise un ReplicaSet. Avant que le déploiement et ReplicaSet ont été ajoutés à Kubernetes, les applications répliquées ont été configurées à l'aide d'un ReplicationController .
 
