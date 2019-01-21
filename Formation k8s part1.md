@@ -964,7 +964,7 @@ Le moyen préféré de créer une application répliquée consiste à utiliser u
 ##JOB
 ---------------------------------------------------------------------------------------------------------------
 
-1/ Creating a Job
+1/ Creer un Job
 ```yaml
 apiVersion: v1
 kind: Job   (création d’un Job de type Pod)
@@ -988,4 +988,28 @@ Image: python → l'image que nous allons extraire pour créer le conteneur qui 
 ∙ restartPolicy: Jamais → Cette condition de redémarrage de l'image est donnée comme jamais, ce qui signifie que si le conteneur est tué ou s'il est faux, il ne redémarrera pas tout seul.
 
 
+2/ SCréer un scheduled Job
+```yaml
+apiVersion: v1
+kind: Job
+metadata:
+   name: py
+spec:
+   schedule: h/30 * * * * ? -------------------> 1
+   template:
+      metadata
+         name: py
+      spec:
+         containers:
+         - name: py
+         image: python
+         args:
+/bin/sh -------> 2
+-c
+ps –eaf ------------> 3
+restartPocliy: OnFailure
+```
 
+ - hschedule: Pour planifier l'exécution du Job toutes les 30 minutes.
+ - /bin/sh: entrer dans le conteneur avec /bin/sh
+ - ps –eaf: Exécute la commande ps -eaf sur la machine et répertorie tous les processus en cours d'exécution dans un conteneur.
