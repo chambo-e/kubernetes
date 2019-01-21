@@ -175,6 +175,7 @@ spec:
   containers:
   - name: container1
     image: ubuntu
+    imagePullPolicy: Always
     env:
     -name: envname
      value: "valenv"
@@ -315,7 +316,12 @@ $ kubectl get pod monpod --namespace=namespace1 -o yaml
 $  kubectl describe pod monpod --namespace=namespace1 
 ```
 
-5/ Supprimez un Pod:
+5/ récupéré le journal:`
+```bash
+$ kubectl log monpod
+```
+
+6/ Supprimez un Pod:
 ```bash
 $ kubectl delete pod monpod –-namespace=namespace1
 $ kubectl delete –grace-period=0 --force pod monpod --namespace=namespace1
@@ -949,4 +955,37 @@ $  kubectl delete deployment nginx-deployment
 ```
 
 Le moyen préféré de créer une application répliquée consiste à utiliser un déploiement, qui à son tour utilise un ReplicaSet. Avant que le déploiement et ReplicaSet ont été ajoutés à Kubernetes, les applications répliquées ont été configurées à l'aide d'un ReplicationController .
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------
+##JOB
+---------------------------------------------------------------------------------------------------------------
+
+1/ Creating a Job
+```yaml
+apiVersion: v1
+kind: Job   (création d’un Job de type Pod)
+metadata:
+   name: py
+   spec:
+   template:
+      metadata
+      name: py -------> 2
+      spec:
+         containers:
+            - name: py ------------------------> 3
+            image: python----------> 4
+            command: ["python", "SUCCESS"]
+            restartPocliy: Never --------> 5
+```
+∙ kind: Job → Nous avons défini le type de Job qui indiquera à kubectlt que le fichier yaml utilisé doit créer un module de type de travail.
+∙ Nom: py → C'est le nom du modèle que nous utilisons et la spécification définit le modèle.
+∙ nom: py → nous avons donné le nom py dans les spécifications de conteneur, ce qui permet d'identifier le pod qui sera créé.
+Image: python → l'image que nous allons extraire pour créer le conteneur qui s'exécutera à l'intérieur du pod.
+∙ restartPolicy: Jamais → Cette condition de redémarrage de l'image est donnée comme jamais, ce qui signifie que si le conteneur est tué ou s'il est faux, il ne redémarrera pas tout seul.
+
+
 
