@@ -1040,21 +1040,26 @@ $ kubectl run Name-Pod –image=Image-registry:tag
 
 3/ Afficher des informations sur le déploiement:
 ```bash
+$ kubctl get deployments
 $ kubectl describe deployment nginx-deployment 
+```
+
+4/ Vérifier l'état du déploiement
+```bash
 $ kubectl rollout status deployment/nginx-deployment
 ```
 
-4/ Répertoriez les modules créés par le déploiement:
+5/ Répertoriez les modules créés par le déploiement:
 ```bash
 $  kubectl get pods -l app=nginx 
 ```
 
-5/ Afficher des informations sur un pod:
+6/ Afficher des informations sur un pod:
 ```bash
 $  kubectl describe pod <pod-name> 
 ```
 
-6/ Mise à jour du déploiement par l'application d'un nouveau fichier YAML. 
+7/ Mise à jour du déploiement par l'application d'un nouveau fichier YAML. 
 ```yaml
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
@@ -1080,14 +1085,16 @@ spec:
 Appliquez le nouveau fichier YAML:
 ```bash
 $ kubectl apply -f https://k8s.io/docs/tasks/run-application/deployment-update.yaml 
+ou 
+$ kubectl set image deployment/Deployment tomcat=tomcat:6.0
 ```
 
-7/ Regardez le déploiement créer des pods avec de nouveaux noms et supprimer les anciens pods:
+8/ Regardez le déploiement créer des pods avec de nouveaux noms et supprimer les anciens pods:
 ```bash
 $  kubectl get pods -l app=nginx 
 ```
 
-8/ Scaling de l'application en augmentant le nombre de réplicas (Pods):
+9/ Scaling de l'application en augmentant le nombre de réplicas (Pods):
 ```yaml
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
@@ -1115,7 +1122,7 @@ $ kubectl get pods -l app=nginx
 ```
 
 
-9/ Supprimer un déploiement:
+10/ Supprimer un déploiement:
 ```bash
 $  kubectl delete deployment nginx-deployment 
 ```
@@ -1126,7 +1133,6 @@ supposons que nous souhaitons maintenant mettre à jour les modules nginx pour u
 ```bash
  $ kubectl set image deployment/nginx-deployment nginx = nginx:1.9.1 deployment "nginx-deployment" image updated 
  ```
- 
 Alternativement, nous pouvons edit le Déploiement et changer:
 ```bash
 $ kubectl edit deployment/nginx
@@ -1135,6 +1141,11 @@ $ kubectl edit deployment/nginx
 Pour voir l'état du déploiement, exécutez: 
 ```bash
 $ kubectl rollout status deployment/nginx-deployment
+```
+
+Revenir au déploiement précédent
+```bash
+$ kubectl rollout undo deployment/Deployment –to-revision=2
 ```
 
 La prochaine fois que nous voulons mettre à jour ces Pods, nous avons seulement besoin de mettre à jour le template de pod de Deployment.
@@ -1194,3 +1205,17 @@ restartPocliy: OnFailure
  - hschedule: Pour planifier l'exécution du Job toutes les 30 minutes.
  - /bin/sh: entrer dans le conteneur avec /bin/sh
  - ps –eaf: Exécute la commande ps -eaf sur la machine et répertorie tous les processus en cours d'exécution dans un conteneur.
+ 
+ 
+Pour lister tous les pods appartenant à un job sous une forme lisible par une machine:
+```bash
+$ pods=$(kubectl get pods --selector=job-name=pi --output=jsonpath={.items..metadata.name})
+$ echo $pods
+```
+
+L'option --output=jsonpath spécifie une expression qui récupère juste le nom de chaque pod dans la liste renvoyée.
+```bash
+$ kubectl logs $pods
+```
+
+
