@@ -1120,9 +1120,24 @@ $ kubectl get pods -l app=nginx
 $  kubectl delete deployment nginx-deployment 
 ```
 
-Le moyen préféré de créer une application répliquée consiste à utiliser un déploiement, qui à son tour utilise un ReplicaSet. Avant que le déploiement et ReplicaSet ont été ajoutés à Kubernetes, les applications répliquées ont été configurées à l'aide d'un ReplicationController .
+Le moyen préféré de créer une application répliquée consiste à utiliser un déploiement, qui à son tour utilise un ReplicaSet. 
 
+supposons que nous souhaitons maintenant mettre à jour les modules nginx pour utiliser l'image nginx:1.9.1:
+```bash
+ $ kubectl set image deployment/nginx-deployment nginx = nginx:1.9.1 deployment "nginx-deployment" image updated 
+ ```
+ 
+Alternativement, nous pouvons edit le Déploiement et changer:
+```bash
+$ kubectl edit deployment/nginx
+```
 
+Pour voir l'état du déploiement, exécutez: 
+```bash
+$ kubectl rollout status deployment/nginx-deployment
+```
+
+La prochaine fois que nous voulons mettre à jour ces Pods, nous avons seulement besoin de mettre à jour le template de pod de Deployment.
 
 
 
