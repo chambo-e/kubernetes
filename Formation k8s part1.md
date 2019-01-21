@@ -6,7 +6,7 @@
 ---------------------------------------------------------------------------------------------------------------
 ## Les Nodes
 ---------------------------------------------------------------------------------------------------------------
-CExemple pour la création d'un objet k8s de type node:
+Exemple pour la création d'un objet k8s de type node:
 ```yaml
 apiVersion: v1
 kind: node
