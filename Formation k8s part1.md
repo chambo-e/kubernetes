@@ -6,7 +6,7 @@
 ---------------------------------------------------------------------------------------------------------------
 ## Les Nodes
 ---------------------------------------------------------------------------------------------------------------
-CExemple pour la création d'un objet k8s de type node:
+Exemple pour la création d'un objet k8s de type node:
 ```yaml
 apiVersion: v1
 kind: node
@@ -14,8 +14,10 @@ metadata:
    name: < ip address of the node>
    labels:
       name: <lable name>
-```	
-	
+```
+
+Les node Controller constituent la collection de services qui s'exécutent dans le maître Kubernetes et surveillent en permanence le nœud du cluster sur la base du fichier metadata.name.	
+
 
 ---------------------------------------------------------------------------------------------------------------
 ## Kubectl
