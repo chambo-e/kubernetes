@@ -307,13 +307,24 @@ metadata:
 spec:
   containers:
   - name: container1
-    image: nginx
+     image: tomcat: 8.0
+     ports:
+      containerPort: 7500
+  - name: container2
+     image: mongoDB
+     Ports:
+     containerPort: 7501
 ```
 
 2/ Création du Pod à partir d'un fichier manifest:
 ```bash
 $ kubectl create –f mon-fichier.yaml  (--namespace=namespace1)
 (--record enregistre la commande en cours dans les annotations. Utile pour une révision ultérieure)
+```
+A la différences des "Multi container pod", les "Single Container Pod" peuvent être simplement créés avec la commande kubctl run.
+```bash
+$ kubectl run <name of pod> --image=<name of the image from registry>
+$ kubectl run tomcat --image = tomcat:8.0
 ```
 
 3/ Afficher les Pods en cours d’execution:
@@ -924,15 +935,79 @@ spec:
 
 
 ---------------------------------------------------------------------------------------------------------------
-##RUN APPLICATION
+##Controller
 ---------------------------------------------------------------------------------------------------------------
-### objet Kubernetes Deployment
 
-exécuter une application à l'aide d'un objet Kubernetes Deployment.
-Vous pouvez exécuter une application en créant un objet Déploiement Kubernetes et vous pouvez décrire un déploiement dans un fichier YAML.
-
+###Replication Controller
+1/ définiser un type Replication Controller ontrôleur:
 ```yaml
-apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+apiVersion: v1
+kind: ReplicationController 
+metadata:
+   name: Name-ReplicationController
+spec:
+   replicas: 3 
+   template:
+      metadata:
+         name: Name-ReplicationController
+      labels:
+         app: App
+         component: neo4j
+      spec:
+         containers:
+         - name: Nmae_Cntainer
+         image: tomcat: 8.0
+         ports:
+            - containerPort: 7474 
+```  
+
+2/ Afficher les détails du contrôleur de réplication.:
+```bash
+$ kubctl get rc
+```   
+
+
+###ReplicaSet
+La principale différence entre le réplica Set et le Replication Controller est que le Replication Controller ne prend en charge que le sélecteur equality-based, alors que le jeu de réplicas prend en charge le sélecteur set-based selector.
+```yaml
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+   name: Tomcat-ReplicaSet
+spec:
+   replicas: 3
+   selector:
+      matchLables:
+         tier: Backend
+      matchExpression:
+{ key: tier, operation: In, values: [Backend]}
+template:
+   metadata:
+      lables:
+         app: Tomcat-ReplicaSet
+         tier: Backend
+      labels:
+         app: App
+         component: neo4j
+   spec:
+      containers:
+      - name: Tomcat
+      image: tomcat: 8.0
+      ports:
+      - containerPort: 7474
+ ```  
+ 
+2/ Afficher les détails du ReplicaSet:
+```bash
+$ kubctl get rs
+```   
+
+
+
+###Deployment
+1/ Exécuter une application à l'aide d'un objet Kubernetes Deployment.
+```yaml
+apiVersion: apps/v1 
 kind: Deployment
 metadata:
   name: nginx-deployment
@@ -955,29 +1030,31 @@ spec:
         - containerPort: 80
 ```
 
-Créez un déploiement basé sur le fichier YAML:
-```
+2/ Créez un déploiement basé sur le fichier YAML:
+```bash
 $ kubectl apply -f https://k8s.io/docs/tasks/run-application/deployment.yaml
 ```
+Creation le controller de type ‘deployment’:
+$ kubectl run Name-Pod –image=Image-registry:tag 
 
-Afficher des informations sur le déploiement:
-```
+
+3/ Afficher des informations sur le déploiement:
+```bash
 $ kubectl describe deployment nginx-deployment 
+$ kubectl rollout status deployment/nginx-deployment
 ```
 
-Répertoriez les modules créés par le déploiement:
-```
+4/ Répertoriez les modules créés par le déploiement:
+```bash
 $  kubectl get pods -l app=nginx 
 ```
 
-Afficher des informations sur un pod:
-```
+5/ Afficher des informations sur un pod:
+```bash
 $  kubectl describe pod <pod-name> 
 ```
 
-Mise à jour du déploiement:
-Vous pouvez mettre à jour le déploiement en appliquant un nouveau fichier YAML. 
-
+6/ Mise à jour du déploiement par l'application d'un nouveau fichier YAML. 
 ```yaml
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
@@ -1001,18 +1078,16 @@ spec:
 ```
 
 Appliquez le nouveau fichier YAML:
-```
+```bash
 $ kubectl apply -f https://k8s.io/docs/tasks/run-application/deployment-update.yaml 
 ```
 
-Regardez le déploiement créer des pods avec de nouveaux noms et supprimer les anciens pods:
-```
+7/ Regardez le déploiement créer des pods avec de nouveaux noms et supprimer les anciens pods:
+```bash
 $  kubectl get pods -l app=nginx 
 ```
 
-Scaling de l'application en augmentant le nombre de réplicas:
-Vous pouvez augmenter le nombre de pods dans votre déploiement en appliquant un nouveau fichier YAML.
-
+8/ Scaling de l'application en augmentant le nombre de réplicas (Pods):
 ```yaml
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
@@ -1034,15 +1109,14 @@ spec:
         ports:
         - containerPort: 80
 ```
-
 appliquer les changements et vérifier les résultat:
-```
+```bash
 $ kubectl get pods -l app=nginx
 ```
 
 
-Supprimer un déploiement:
-```
+9/ Supprimer un déploiement:
+```bash
 $  kubectl delete deployment nginx-deployment 
 ```
 
