@@ -4,6 +4,20 @@
 
 
 ---------------------------------------------------------------------------------------------------------------
+## Les Nodes
+---------------------------------------------------------------------------------------------------------------
+CExemple pour la création d'un objet k8s de type node:
+```yaml
+apiVersion: v1
+kind: node
+metadata:
+   name: < ip address of the node>
+   labels:
+      name: <lable name>
+```	
+	
+
+---------------------------------------------------------------------------------------------------------------
 ## Kubectl
 ---------------------------------------------------------------------------------------------------------------
 
@@ -375,6 +389,7 @@ $ kubectl get pods --show-labels –-namespace=namespace1
 ```bash
 $ kubectl get pods -l environment=production,tier=frontend
 ```
+*equality-base permet de filtrer par clé et par valeur. Les objets correspondants doivent satisfaire à toutes les étiquettes spécifiées.
 
 4/ Effectuer une recherche avec le selector set-based:
 ```bash
