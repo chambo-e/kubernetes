@@ -1258,6 +1258,7 @@ Pour voir l'état du déploiement, exécutez:
 $ kubectl rollout status deployment/nginx-deployment
 ```
 
+
 Revenir au déploiement précédent
 ```bash
 $ kubectl rollout undo deployment/Deployment –to-revision=2
