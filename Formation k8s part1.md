@@ -293,6 +293,46 @@ $ kubectl delete namespace namespace1
 ```
 
 
+---------------------------------------------------------------------------------------------------------------
+## NETWORK POLICY:
+---------------------------------------------------------------------------------------------------------------
+```yaml  
+kind: Namespace
+apiVersion: v1
+metadata:
+   annotations:
+      net.beta.kubernetes.io/network-policy: |
+      {
+         "ingress": 
+         {
+            "isolation": "DefaultDeny"
+         }
+      }
+$ kubectl annotate ns <namespace> "net.beta.kubernetes.io/network-policy = 
+{\"ingress\": {\"isolation\": \"DefaultDeny\"}}"
+```
+
+```yaml
+kind: NetworkPolicy
+apiVersion: extensions/v1beta1
+metadata:
+   name: allow-frontend
+   namespace: myns
+spec:
+   podSelector:
+      matchLabels:
+         role: backend
+   ingress:
+   - from:
+      - podSelector:
+         matchLabels:
+            role: frontend
+   ports:
+      - protocol: TCP
+         port: 6379
+```
+
+
 
 ---------------------------------------------------------------------------------------------------------------
 ## Les Pods
