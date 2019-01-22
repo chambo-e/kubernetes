@@ -15,6 +15,8 @@ metadata:
    labels:
       name: <lable name>
 ```
+Information: Les noeuds Kubernetes peuvent être programmés sur Capacité. Les pods peuvent utiliser toute la capacité disponible sur un nœud par défaut : https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/
+
 
 ---------------------------------------------------------------------------------------------------------------
 ## Kubectl
@@ -46,8 +48,9 @@ Pour modifier le fichier kubeconfig:
 $ kubectl config <SUBCOMMAD>
 $ kubectl config –-kubeconfig <String of File name>
 
-Pour définir un ou plusieurs contextes.
+Pour définir un contextes et l'utiliser.
 $ kubectl config get-context <Context Name>
+$ kubectl config use-context dev
 ```
 
 1/ Définit l'entrée du cluster dans Kubernetes.
@@ -158,7 +161,8 @@ $ kubectl config delete-cluster <Cluster Name>
 $ kubectl drain $NODENAME
 $ kubectl uncordon $NODENAME
 ```
-
+Pour vider en toute sécurité un node tout en respectant les SLO d'applicationVoir: 
+https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/
 
 
 ### Utiliser Kubectl:
@@ -291,6 +295,7 @@ Voir: https://kubernetes.io/docs/tools/kompose/user-guide/
 1/ Lister tous les namespaces:
 ```bash
 $ kubectl get namespaces
+$ kubectl get namespaces --show-labels
 ```
 
 2/ Créer un namespace:
@@ -383,13 +388,21 @@ metadata:
 spec:
   containers:
   - name: container1
-     image: tomcat: 8.0
-     ports:
-      containerPort: 7500
+    image: Debian
+    env:
+    - name: MESSAGE
+      value: "Hello Word"
+    ports:
+     containerPort: 7500
+    command: ["printenv"]
+    args: ["HOSTNAME", "KUBERNETES_PORT", "$(MESSAGE)"]
+  restartPolicy: OnFailure
   - name: container2
-     image: mongoDB
-     Ports:
+    image: Centos
+    Ports:
      containerPort: 7501
+    command: ["/bin/sh"]
+    args: ["-c", "while true; do echo hello; sleep 10;done"]
 ```
 
 2/ Création du Pod à partir d'un fichier manifest:
@@ -405,6 +418,7 @@ $ kubectl run tomcat --image = tomcat:8.0
 
 3/ Afficher les Pods en cours d’execution:
 ```bash
+$ kubectl get pod
 $ kubectl get pod monpod -o wide
  *(-o wide permet d'afficher le Node auquel le pod a été assigné)
 
@@ -417,7 +431,7 @@ $ kubectl get pod monpod --namespace=namespace1 -o yaml
 $  kubectl describe pod monpod --namespace=namespace1 
 ```
 
-5/ récupéré le journal:`
+5/ Pour voir le résultat de la commande qui a été exécutée dans le conteneur, affichez les journaux du pod:`
 ```bash
 $ kubectl log monpod
 ```
@@ -427,7 +441,14 @@ $ kubectl log monpod
 $ kubectl attach <pod> –c <container>
 ```
 
-7/ Supprimez un Pod:
+7/ Obtenez un shell dans le conteneur de votre pod:
+```bash
+$ kubectl exec -it name_container --/bin/bash
+```
+Dans votre shell, exécutez la commande "printenv" pour répertorier les variables d’environnement.
+
+
+8/ Supprimez un Pod:
 ```bash
 $ kubectl delete pod monpod –-namespace=namespace1
 $ kubectl delete –grace-period=0 --force pod monpod --namespace=namespace1
@@ -876,10 +897,12 @@ Il existe de nombreuses façons de créer des secrets dans Kubernetes.
 1/ méthode 1: Création à partir de fichiers txt
 -Créer des fichiers contenant le nom d'utilisateur et mot de passe:
 ```bash
-	$ echo -n "admin" > ./username.txt
-	$ echo -n "azerty" > ./password.txt
+$ echo -n "admin" > ./username.txt
+$ echo -n "azerty" > ./password.txt
+ou
+echo -n '123456dfg45' | base64 >> ./password.txt
 ```
--Emballez ces fichiers dans des secrets:
+- Emballez ces fichiers dans des secrets:
 ```bash
 $ kubectl create secret generic user --from-file=./username.txt
 $ kubectl create secret generic pass --from-file=./password.txt
