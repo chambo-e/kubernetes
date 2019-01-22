@@ -1,4 +1,10 @@
 
+---------------------------------------------------------------------------------------------------------------
+## Security Cluster
+---------------------------------------------------------------------------------------------------------------
+https://kubernetes.io/docs/tasks/administer-cluster/securing-a-cluster/
+https://kubernetes.io/docs/tasks/administer-cluster/highly-available-master/
+
 
 ---------------------------------------------------------------------------------------------------------------
 ## comptes de service
@@ -235,6 +241,11 @@ Kubernetes envoie uniquement l'événement preStop lorsqu'un module est terminé
 ---------------------------------------------------------------------------------------------------------------
 Configurer un pod pour utiliser un fichier ConfigMap:
 ConfigMaps vous permet de découpler les artefacts de configuration du contenu de l'image pour garder les applications conteneurisées portables.
+
+Exemple: La configuration dynamique de Kubelet vous permet de modifier la configuration de chaque Kubelet dans un cluster Kubernetes actif en déployant un ConfigMap et en configurant chaque nœud pour son utilisation.
+https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/
+
+
 comment créer des fichiers ConfigMaps et configurer des modules en utilisant des données stockées dans ConfigMaps.
 créer des configmaps à partir de répertoires , de fichiers ou de valeurs littérales :
 ```bash
