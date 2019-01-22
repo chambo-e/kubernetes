@@ -14,14 +14,13 @@ metadata:
    name: < ip address of the node>
    labels:
       name: <lable name>
-```	
-	
+```
 
 ---------------------------------------------------------------------------------------------------------------
 ## Kubectl
 ---------------------------------------------------------------------------------------------------------------
-
 ### Installation Kubectl:
+
 1/ Télécharger le binaire:
 ```bash
 curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
@@ -41,23 +40,45 @@ Par défaut, la configuration de kubectl est située à ~/.kube/config
 
 
 ### Configurer Kubectl:
-Pour définir l'adresse IP de l'apiserver, les certificats client et les informations d'identification de l'utilisateur:
+Il faut configurer kubectl en local pour pouvoir interagir avec le cluster Kubernetes.
+Pour modifier le fichier kubeconfig:
 ```bash
-$ kubectl config set-cluster $CLUSTER_NAME --certificate-authority=$CA_CERT --embed-certs=true --server=https://$MASTER_IP
-$ kubectl config set-credentials $USER --client-certificate=$CLI_CERT --client-key=$CLI_KEY --embed-certs=true --token=$TOKEN
+$ kubectl config <SUBCOMMAD>
+$ kubectl config –-kubeconfig <String of File name>
 ```
 
-Définissez le cluster comme cluster par défaut:
+1/ Définir l'adresse IP de l'apiserver, les certificats client et les informations d'identification de l'utilisateur:
+```bash
+$ kubectl config set-cluster $CLUSTER_NAME --certificate-authority=ca.pem --embed-certs=true --server=https://$MASTER_IP
+$ kubectl config set-credentials $USER --client-certificate=$CLI_CERT --client-key=admin-key.pem --embed-certs=true --token=$TOKEN
+*$CLUSTER_NAM = default-cluster 
+*$USER = default-admin 
+
+ou 
+$ kubectl config set-credentials default-admin --certificateauthority = ${CA_CERT} --client-key = ${ADMIN_KEY} --clientcertificate = ${ADMIN_CERT}
+```
+
+2/ Définissez le cluster comme cluster par défaut:
 ```bash
 $ kubectl config set-context $CONTEXT_NAME --cluster=$CLUSTER_NAME --user=$USER
 $ kubectl config use-context $CONTEXT_NAME
 ```
 
-Activer de l'auto-complétion en exécutant :
+3/ Vérifier la configuration et affiche le contexte actuel:
+```bash
+$ kubectl get nodes
+$ kubectl config current-context
+```
+
+4/ Afficher les versions d'API prises en charge sur le cluster.
+```bash
+$ kubectl api-version;
+```
+
+5/ Activer de l'auto-complétion en exécutant :
 ```bash
 $ source <(kubectl completion bash)
 ```
-
 Pour ajouter l'autocomplétion à votre profil:
 ```bash
  echo "source <(kubectl completion bash)" >> ~/.bashrc 
@@ -65,14 +86,17 @@ Pour ajouter l'autocomplétion à votre profil:
 
 
 ### Vérification l'état du cluster:
-1/ Vérifiez la configuration de kubectl en obtenant l'état de cluster. L’URL indique que kubectl est correctement configuré pour accéder au cluster
+1/ Affiche les informations du cluster.
+Vérifiez la configuration de kubectl en obtenant l'état de cluster. L’URL indique que kubectl est correctement configuré pour accéder au cluster
 ```bash
  $ kubectl cluster-info 
  ```
- 
+
 Dans le cas contraire, vérifiez que celui-ci est correctement configuré:
+Cette commaqnd affiche les informations pertinentes concernant le cluster pour le débogage et le diagnostic.
 ```bash
- $ kubectl cluster-info dump 
+ $ kubectl cluster-info dump
+ $ kubectl cluster-info dump --output-directory=/path/to/cluster-state
 ```
 
 2/ vérifier la version et l'aide Kubectl:
@@ -106,15 +130,15 @@ $ Curl http://localhost:8080/
 7/ Obtenez une liste et l'URL du reverse Proxy de l'ensemble des services demarré sur le cluster:
 ```bash
 $ kubectl cluster-info
-$ kubectl cluster-info dump
+$ kubectl cluster-info dump 
 $ kubectl get all
 $ kubectl get services --namespace=kube-system 
 $ kubectl options
 ```
 
-8/ Répertoriez les StorageClasses du cluster:
+8/ Supprimer le cluster spécifié dans le kubeconfig:
 ```bash
-$ kubectl get storageclass
+$ kubectl config delete-cluster <Cluster Name>
 ```
 
 9/ Baculer un node en mode maintenance ou normal:
@@ -386,7 +410,12 @@ $  kubectl describe pod monpod --namespace=namespace1
 $ kubectl log monpod
 ```
 
-6/ Supprimez un Pod:
+6/ S'attacher à un conteneur en cours d'exécution dans un Pod.
+```bash
+$ kubectl attach <pod> –c <container>
+```
+
+7/ Supprimez un Pod:
 ```bash
 $ kubectl delete pod monpod –-namespace=namespace1
 $ kubectl delete –grace-period=0 --force pod monpod --namespace=namespace1
@@ -646,7 +675,12 @@ Utiliser un ContainerPort nommé pour les contrôles d'activité HTTP ou TCP:
 ---------------------------------------------------------------------------------------------------------------
 ###Volume emptyDir:
 
-1/ Définir un volume emptyDir dans le Pod et le monter dans le container avec une limite.
+1/ Répertoriez les StorageClasses du cluster:
+```bash
+$ kubectl get storageclass
+```
+
+2/ Définir un volume emptyDir dans le Pod et le monter dans le container avec une limite.
 ```yaml
 limite: 
 	spec:
@@ -666,12 +700,12 @@ limite:
             ephemeral-storage: 1GiB
 ```
 
-2/ Créer le Pod puis dans un autre terminal, lancer un shell sur le conteneur:
+3/ Créer le Pod puis dans un autre terminal, lancer un shell sur le conteneur:
 ```bash
 $ kubectl exec -it container1 -- /bin/bash
 ```
 
-3/ Dans le terminal d'origine, surveillez les modifications apportées
+4/ Dans le terminal d'origine, surveillez les modifications apportées
 
 
 ### PV & PVC:
@@ -1219,6 +1253,16 @@ $ kubectl rollout undo deployment/Deployment –to-revision=2
 
 La prochaine fois que nous voulons mettre à jour ces Pods, nous avons seulement besoin de mettre à jour le template de pod de Deployment.
 
+
+
+---------------------------------------------------------------------------------------------------------------
+##AutoScale
+---------------------------------------------------------------------------------------------------------------
+Mettre à l'échelle automatiquement les pods définis tels que Déploiement, Replica Set, Replication Controller.
+```bash
+$ kubectl autoscale (-f FILENAME | TYPE NAME | TYPE/NAME) [--min = MINPODS] --max = MAXPODS [--cpu-percent = CPU] [flags]
+$ kubectl autoscale deployment foo --min = 2 --max = 10
+```
 
 
 ---------------------------------------------------------------------------------------------------------------
