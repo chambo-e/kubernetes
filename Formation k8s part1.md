@@ -45,9 +45,14 @@ Pour modifier le fichier kubeconfig:
 ```bash
 $ kubectl config <SUBCOMMAD>
 $ kubectl config –-kubeconfig <String of File name>
+
+Pour définir un ou plusieurs contextes.
+$ kubectl config get-context <Context Name>
 ```
 
-1/ Définir l'adresse IP de l'apiserver, les certificats client et les informations d'identification de l'utilisateur:
+1/ Définit l'entrée du cluster dans Kubernetes.
+$ kubectl config set-cluster NAME [--server=server] [--certificateauthority=path/to/certificate/authority] [--insecure-skip-tls-verify = true]
+*Définir l'adresse IP de l'apiserver, les certificats client ou Token et les informations d'identification de l'utilisateur:
 ```bash
 $ kubectl config set-cluster $CLUSTER_NAME --certificate-authority=ca.pem --embed-certs=true --server=https://$MASTER_IP
 $ kubectl config set-credentials $USER --client-certificate=$CLI_CERT --client-key=admin-key.pem --embed-certs=true --token=$TOKEN
@@ -62,12 +67,19 @@ $ kubectl config set-credentials default-admin --certificateauthority = ${CA_CER
 ```bash
 $ kubectl config set-context $CONTEXT_NAME --cluster=$CLUSTER_NAME --user=$USER
 $ kubectl config use-context $CONTEXT_NAME
+
+Pour supprimer un contexte spécifié de kubeconfig:
+$ kubectl config delete-context <Context Name>
 ```
 
 3/ Vérifier la configuration et affiche le contexte actuel:
 ```bash
 $ kubectl get nodes
+$ kubectl config get-cluster
+$ kubectl config get-cluster <Cluser Name>
 $ kubectl config current-context
+$ kubectl config view
+$ kubectl config view –o jsonpath='{.users[?(@.name == "e2e")].user.password}'
 ```
 
 4/ Afficher les versions d'API prises en charge sur le cluster.
