@@ -602,10 +602,11 @@ Utiliser un ContainerPort nommé pour les contrôles d'activité HTTP ou TCP:
 
 
 ---------------------------------------------------------------------------------------------------------------
-## Les volumes
+##  volumes
 ---------------------------------------------------------------------------------------------------------------
-### Pod et Volume éphémère:
-1/ Définir un volume dans le Pod et le monter dans le container avec une limite.
+###Volume emptyDir:
+
+1/ Définir un volume emptyDir dans le Pod et le monter dans le container avec une limite.
 ```yaml
 limite: 
 	spec:
@@ -633,7 +634,7 @@ $ kubectl exec -it container1 -- /bin/bash
 3/ Dans le terminal d'origine, surveillez les modifications apportées
 
 
-### Pod et Volume persistant (PersistentVolumeClaim):
+### PV & PVC:
 1/ Créer un "PersistentVolume"
 ```bash
 $  mkdir /mnt/data 
@@ -662,11 +663,14 @@ $ echo 'test volume persistant' > /mnt/data/index.html
 	    path: "/mnt/data"
 ```
 *("StorageClass"  sur manual pour un PersistentVolume est utilisé pour lier les requêtes PersistentVolumeClaim à ce PersistentVolume)
-
+```bash
+$ kubectl create –f pv.yaml
+```
 
 4/ Afficher des informations (status) sur le PersistentVolume:
 ```bash
 $ kubectl get pv task-pv-volume
+$ kubectl describe pv task-pv-volume
 ```
 
 5/ Crée un PersistentVolumeClaim, qui sera automatiquement lié au PersistentVolume et qui demande un volume d'au moins trois gibibytes pouvant fournir un accès en r/w pour au moins un node:
@@ -683,10 +687,16 @@ $ kubectl get pv task-pv-volume
 	    requests:
 	      storage: 3Gi
 ```
+```bash
+$ kubectl create –f pvc.yaml
+$ kubectl get pvc
+```
+
 
 6/ Regardez à nouveau le PersistentVolume et vérifier que la sortie montre que PersistentVolumeClaim est lié à votre PersistantVolume:
 ```bash
-$  kubectl get pv task-pv-volume 
+$  kubectl get pv task-pv-volume
+$ kubectl describe pv pv0001
 ```
 
 7/ Créer un pod qui utilise PersistentVolumeClaim comme volume de stockage.
@@ -703,6 +713,11 @@ $  kubectl get pv task-pv-volume
 	    - mountPath: "/var/www/monsite"
 	      name: volume1
 ```
+Dans le code ci-dessus, nous avons défini -
+∙ volumeMounts: → Il s'agit du chemin dans le conteneur sur lequel le montage aura lieu.
+∙ Volume: → Cette définition définit la définition de volume que nous allons réclamer.
+∙ persistentVolumeClaim: → Sous cela, nous définissons le nom du volume que nous allons utiliser dans le module défini.
+
 
 8/ Obtenez un shell sur le conteneur et vérifiez le montage:
 ```bash
@@ -767,7 +782,12 @@ Quand un Pod consomme un PersistentVolume qui a une annotation GID, le GID annot
 ---------------------------------------------------------------------------------------------------------------
 ## Les secrets
 ---------------------------------------------------------------------------------------------------------------
-1/ Créer un secret (méthode 1):
+
+### Créer des secrets:
+
+Il existe de nombreuses façons de créer des secrets dans Kubernetes.
+
+1/ méthode 1: Création à partir de fichiers txt
 -Créer des fichiers contenant le nom d'utilisateur et mot de passe:
 ```bash
 	$ echo -n "admin" > ./username.txt
@@ -779,12 +799,12 @@ $ kubectl create secret generic user --from-file=./username.txt
 $ kubectl create secret generic pass --from-file=./password.txt
 ```
 
-2/ Créer un secret (mMéthode 2):
+2/ mMéthode 2: Créer à partir d'une commande k8s
 ```bash
 $ kubectl create secret generic monsecret --from-literal=username='my-app' --from-literal=password='39528$vdg7Jb'
 ```
 
-3/ Créer un secret (méthode 3):
+3/ méthode 3: Créer à partir d'un fichier yaml
 -Créer l'object secret à partir du fichier yaml:
 ```yaml
 	apiVersion: v1
@@ -796,11 +816,20 @@ $ kubectl create secret generic monsecret --from-literal=username='my-app' --fro
 	  password: azerty
 ```
 
+```bash
+$ kubectl create –f Secret.yaml
+```
+
 4/ Afficher des informations sur le secret:
 ```bash
 $  kubectl get secret  
 $  kubectl describe secret monsecret -o yaml
 ```
+
+### Utiliser des secrets
+Une fois que nous avons créé les secrets, il peut être consommé dans un pod ou un contrôleur en tant que: 
+ - Variable d'environnement
+ - volume
 
 5/ Créer un pod qui accède aux secret via un volume (tous les fichiers créés sur montage secret auront l'autorisation 0400):
 ```yaml
@@ -838,7 +867,7 @@ $  kubectl describe secret monsecret -o yaml
 
 
 7/ Créer un pod qui a accès aux secret via des variables d'environnement:
-
+Afin d'utiliser la variable secrète comme variable d'environnement, nous utiliserons env dans la section spec du fichier pod yaml.
 ```yaml
 spec:
   containers:
