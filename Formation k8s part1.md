@@ -1077,6 +1077,8 @@ spec:
 ---------------------------------------------------------------------------------------------------------------
 
 ###Replication Controller
+Avant que le déploiement et ReplicaSet soient ajoutés à Kubernetes, les applications répliquées étaient configurées à l'aide d'un ReplicationController.
+
 1/ définiser un type Replication Controller ontrôleur:
 ```yaml
 apiVersion: v1
@@ -1103,10 +1105,15 @@ spec:
 ```bash
 $ kubctl get rc
 ```   
+Voir comment effectuer une mise à jour progressive à l'aide d'un contrôleur de réplication:
+https://kubernetes.io/docs/tasks/run-application/rolling-update-replication-controller/
+
 
 
 ###ReplicaSet
+
 La principale différence entre le réplica Set et le Replication Controller est que le Replication Controller ne prend en charge que le sélecteur equality-based, alors que le jeu de réplicas prend en charge le sélecteur set-based selector.
+
 ```yaml
 apiVersion: extensions/v1beta1
 kind: ReplicaSet
@@ -1141,8 +1148,11 @@ $ kubctl get rs
 ```   
 
 
+---------------------------------------------------------------------------------------------------------------
+##Controller Deployment
+---------------------------------------------------------------------------------------------------------------
+La méthode préférée pour créer une application répliquée consiste à utiliser un déploiement, qui à son tour utilise un ReplicaSet.
 
-###Deployment
 1/ Exécuter une application à l'aide d'un objet Kubernetes Deployment.
 ```yaml
 apiVersion: apps/v1 
@@ -1222,7 +1232,7 @@ spec:
 
 Appliquez le nouveau fichier YAML:
 ```bash
-$ kubectl apply -f https://k8s.io/docs/tasks/run-application/deployment-update.yaml 
+$ kubectl apply -f deployment-update.yaml 
 ou 
 $ kubectl set image deployment/Deployment tomcat=tomcat:6.0
 ```
@@ -1254,19 +1264,26 @@ spec:
         ports:
         - containerPort: 80
 ```
-appliquer les changements et vérifier les résultat:
+
+Appliquer les changements et vérifier les résultat:
 ```bash
+kubectl apply -f deployment-scale.yaml
 $ kubectl get pods -l app=nginx
 ```
-
 
 10/ Supprimer un déploiement:
 ```bash
 $  kubectl delete deployment nginx-deployment 
 ```
 
-Le moyen préféré de créer une application répliquée consiste à utiliser un déploiement, qui à son tour utilise un ReplicaSet. 
+11/ Voir comment exécuter une application avec état à instance unique à l'aide de PersistentVolume et d'un déploiement.:
+https://kubernetes.io/docs/tasks/run-application/run-single-instance-stateful-application/
 
+12/ Voir comment exécuter une application avec état répliquée à l'aide d'un contrôleur StatefulSet. L'exemple est une topologie mono-maître MySQL avec plusieurs esclaves exécutant une réplication asynchrone. Notez qu'il ne s'agit pas d'une configuration de production. 
+https://kubernetes.io/docs/tasks/run-application/run-replicated-stateful-application/
+
+
+Autre méthode:
 supposons que nous souhaitons maintenant mettre à jour les modules nginx pour utiliser l'image nginx:1.9.1:
 ```bash
  $ kubectl set image deployment/nginx-deployment nginx = nginx:1.9.1 deployment "nginx-deployment" image updated 
@@ -1281,14 +1298,16 @@ Pour voir l'état du déploiement, exécutez:
 $ kubectl rollout status deployment/nginx-deployment
 ```
 
-
 Revenir au déploiement précédent
 ```bash
 $ kubectl rollout undo deployment/Deployment –to-revision=2
 ```
 
 La prochaine fois que nous voulons mettre à jour ces Pods, nous avons seulement besoin de mettre à jour le template de pod de Deployment.
+voir 
 
+Utiliser un correctif de fusion stratégique pour mettre à jour un déploiement:
+https://kubernetes.io/docs/tasks/run-application/update-api-object-kubectl-patch/
 
 
 ---------------------------------------------------------------------------------------------------------------
@@ -1297,7 +1316,7 @@ La prochaine fois que nous voulons mettre à jour ces Pods, nous avons seulement
 Mettre à l'échelle automatiquement les pods définis tels que Déploiement, Replica Set, Replication Controller.
 ```bash
 $ kubectl autoscale (-f FILENAME | TYPE NAME | TYPE/NAME) [--min = MINPODS] --max = MAXPODS [--cpu-percent = CPU] [flags]
-$ kubectl autoscale deployment foo --min = 2 --max = 10
+$ kubectl autoscale deployment foo --min=2 --max=10
 ```
 
 
