@@ -18,6 +18,8 @@ metadata:
 Information: Les noeuds Kubernetes peuvent être programmés sur Capacité. Les pods peuvent utiliser toute la capacité disponible sur un nœud par défaut : https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/
 
 
+
+
 ---------------------------------------------------------------------------------------------------------------
 ## Kubectl
 ---------------------------------------------------------------------------------------------------------------
@@ -38,125 +40,122 @@ curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s htt
  sudo mv ./kubectl /usr/local/bin/kubectl
 ```
 
-Par défaut, la configuration de kubectl est située à ~/.kube/config 
-
-
-### Configurer Kubectl:
-Il faut configurer kubectl en local pour pouvoir interagir avec le cluster Kubernetes.
-Pour modifier le fichier kubeconfig:
-```bash
-$ kubectl config <SUBCOMMAD>
-$ kubectl config –-kubeconfig <String of File name>
-
-Pour définir un contextes et l'utiliser.
-$ kubectl config get-context <Context Name>
-$ kubectl config use-context dev
-```
-
-1/ Définit l'entrée du cluster dans Kubernetes.
-$ kubectl config set-cluster NAME [--server=server] [--certificateauthority=path/to/certificate/authority] [--insecure-skip-tls-verify = true]
-*Définir l'adresse IP de l'apiserver, les certificats client ou Token et les informations d'identification de l'utilisateur:
-```bash
-$ kubectl config set-cluster $CLUSTER_NAME --certificate-authority=ca.pem --embed-certs=true --server=https://$MASTER_IP
-$ kubectl config set-credentials $USER --client-certificate=$CLI_CERT --client-key=admin-key.pem --embed-certs=true --token=$TOKEN
-*$CLUSTER_NAM = default-cluster 
-*$USER = default-admin 
-
-ou 
-$ kubectl config set-credentials default-admin --certificateauthority = ${CA_CERT} --client-key = ${ADMIN_KEY} --clientcertificate = ${ADMIN_CERT}
-```
-
-2/ Définissez le cluster comme cluster par défaut:
-```bash
-$ kubectl config set-context $CONTEXT_NAME --cluster=$CLUSTER_NAME --user=$USER
-$ kubectl config use-context $CONTEXT_NAME
-
-Pour supprimer un contexte spécifié de kubeconfig:
-$ kubectl config delete-context <Context Name>
-```
-
-3/ Vérifier la configuration et affiche le contexte actuel:
-```bash
-$ kubectl get nodes
-$ kubectl config get-cluster
-$ kubectl config get-cluster <Cluser Name>
-$ kubectl config current-context
-$ kubectl config view
-$ kubectl config view –o jsonpath='{.users[?(@.name == "e2e")].user.password}'
-```
-
-4/ Afficher les versions d'API prises en charge sur le cluster.
-```bash
-$ kubectl api-version;
-```
-
-5/ Activer de l'auto-complétion en exécutant :
+4/ Activer de l'auto-complétion en exécutant :
 ```bash
 $ source <(kubectl completion bash)
 ```
+
 Pour ajouter l'autocomplétion à votre profil:
 ```bash
  echo "source <(kubectl completion bash)" >> ~/.bashrc 
 ```
 
-
-### Vérification l'état du cluster:
-1/ Affiche les informations du cluster.
-Vérifiez la configuration de kubectl en obtenant l'état de cluster. L’URL indique que kubectl est correctement configuré pour accéder au cluster
-```bash
- $ kubectl cluster-info 
- ```
-
-Dans le cas contraire, vérifiez que celui-ci est correctement configuré:
-Cette commaqnd affiche les informations pertinentes concernant le cluster pour le débogage et le diagnostic.
-```bash
- $ kubectl cluster-info dump
- $ kubectl cluster-info dump --output-directory=/path/to/cluster-state
-```
-
-2/ vérifier la version et l'aide Kubectl:
+5/ vérifier la version et l'aide Kubectl:
 ```bash
 $ kubectl version
 $ kubectl -h
 ```
 
-3/ Vérifiez l'emplacement et les informations d'identification :   
+
+
+### Configurer Kubectl:
+Il faut configurer kubectl en local pour pouvoir interagir avec le cluster Kubernetes (IP de l'apiserver, certificats client, Token,informations d'identification utilisateur. Spécifier une option qui existe déjà fusionnera de nouveaux champs avec les valeurs existantes pour ces champs. Par défaut, la configuration de kubectl est située à ~/.kube/config.
+
+Pour modifier le fichier kubeconfig:
 ```bash
-$ kubectl config view 
+$ kubectl config -h
+$ kubectl <command> --help
+$ kubectl config –-kubeconfig <String of File name>
+```
+Pour obtenir une liste d’options globales:
+```bash
+$ kubectl options
 ```
 
-4/ Vérifiez chaque composant:
+1/ Définir une entrée de cluster dans Kubeconfig :
+kubectl config set-cluster NAME [--server=server] [--certificate-authority=...] [--insecure-skip-tls-verify=true] [options]
+*--insecure-skip-tls-verify = Désactive la vérification de certification 
+
+```bash
+$ kubectl config get-clusters
+$ kubectl config set-cluster $CLUSTER_NAME --certificate-authority=ca.pem --embed-certs=true --server=https://$MASTER_IP
+```
+Pour supprimer le cluster:
+```bash
+$ kubectl config delete-cluster <$CLUSTER_NAME>
+```
+
+
+2/ Définir les credentials:
+```bash
+$ kubectl config set-credentials -h
+$ kubectl config set-credentials $USER --client-certificate=$CLI_CERT --client-key=admin-key.pem --embed-certs=true --token=$TOKEN
+ou
+$ kubectl config set-credentials default-admin --certificateauthority = ${CA_CERT} --client-key = ${ADMIN_KEY} --clientcertificate = ${ADMIN_CERT}
+`
+``
+
+3/ Définissez le context par défaut:
+```bash
+$ kubectl config get-contexts
+$ kubectl config set-context $CONTEXT_NAME --cluster=$CLUSTER_NAME --user=$USER
+$ kubectl config use-context $CONTEXT_NAME
+$ kubectl config current-context
+
+Pour supprimer un contexte spécifié de kubeconfig:
+$ kubectl config delete-context <Context Name>
+```
+
+3/ Vérifier la configuration :
+```bash
+$ kubectl config view
+```
+
+4/ Afficher les versions d'API prises en charge sur le cluster.
+```bash
+$ kubectl api-versions
+```
+
+
+
+### Vérification l'état du cluster:
+1/ Affiche les informations du cluster.
+```bash
+ $ kubectl cluster-info 
+ *L’URL indique que kubectl est correctement configuré pour accéder au cluster (Apiserver)
+ $ kubectl get nodes
+ ```
+Dans le cas contraire, vérifiez que celui-ci est correctement configuré:
+Affiche les informations pertinentes concernant le cluster pour le débogage et le diagnostic.
+```bash
+ $ kubectl cluster-info dump
+ $ kubectl cluster-info dump --output-directory=/path/to/cluster-state
+```
+
+2/ Vérifiez le status de chaque composant:
 ```bash
 $ kubectl get cs
 ```
 
-5/ Obtenez les noms de vos nœuds du cluster
+5/ Obtenez des informations sur les nodes du cluster:
 ```bash
 $ kubectl get nodes
 $ kubectl describe nodes
 ```
 
-6/ exécute kubectl en mode reverse-proxy et tester le serveur API et l'authentification : 
+6/ Exécute kubectl en mode reverse-proxy et tester le serveur API et l'authentification : 
 ```bash
 $ kubectl proxy --port=8080 &
-$ Curl http://localhost:8080/
+$ curl http://localhost:8080/
 ```
 
 7/ Obtenez une liste et l'URL du reverse Proxy de l'ensemble des services demarré sur le cluster:
 ```bash
-$ kubectl cluster-info
-$ kubectl cluster-info dump 
 $ kubectl get all
 $ kubectl get services --namespace=kube-system 
-$ kubectl options
 ```
 
-8/ Supprimer le cluster spécifié dans le kubeconfig:
-```bash
-$ kubectl config delete-cluster <Cluster Name>
-```
-
-9/ Baculer un node en mode maintenance ou normal:
+8/ Baculer un node en mode maintenance ou normal:
 ```bash
 $ kubectl drain $NODENAME
 $ kubectl uncordon $NODENAME
@@ -165,8 +164,10 @@ Pour vider en toute sécurité un node tout en respectant les SLO d'applicationV
 https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/
 
 
+
+
 ### Utiliser Kubectl:
-Lorsque vous effectuez une opération sur plusieurs ressources, vous pouvez spécifier chaque ressource par type et nom ou spécifier un ou plusieurs fichiers:
+Lorsque d'une opération sur plusieurs ressources, on peut spécifier chaque ressource par type d'objet et nom ou spécifier un ou plusieurs fichiers:
 
 1/ spécifier des ressources du même type:
 ```bash
@@ -183,11 +184,6 @@ $ kubectl get pod/example-pod1 replicationcontroller/example-rc1
 $ kubectl get pod -f ./pod.yaml
 ```
 
-4/ Obtenir l'aide kubectl:
-```bash
-$ kubectl options
-$ kuctl -h
-```
 
 
 ### Migration de commandes
@@ -268,21 +264,22 @@ Traduire un fichier Docker Compose en ressources Kubernetes (Kubernetes + Compos
 C'est un outil de conversion (Docker Compose) pour les orchestrateurs de conteneurs (Kubernetes ou OpenShift).
 http://kompose.io/
 
-En trois étapes simples, nous vous emmènerons de Docker Compose à Kubernetes.
-1/ Prenez un exemple de fichier docker-compose.yaml
-2/ Exécutez "kompose up" dans le même répertoire
-
-Alternativement, vous pouvez exécuter kompose convert et déployer avec kubectl:
 Installation kompose:
 ```bash
-curl -L https://github.com/kubernetes/kompose/releases/download/v1.1.0/kompose-linux-amd64 -o kompose
+curl -L https://github.com/kubernetes/kompose/releases/download/v1.17.0/kompose-linux-amd64 -o kompose
 chmod +x kompose
 sudo mv ./kompose /usr/local/bin/kompose
 ```
 
+1/ Utilisation en trois étapes :
+ - Accédez au répertoire contenant votre fichier "docker-compose.yaml"
+ - Exécutez "kompose up" dans le même répertoire
+ - Vérifiez le déploiement des containers dans le cluster Kubernetes "kubectl get po"
+
+2/ Alternativement: vous pouvez exécuter kompose convert pour générer un fichier à utiliser avec kubectl.
 ```bash
-$ kompose --file docker-voting.yml convert
-$ kompose --provider openshift --file docker-voting.yml convert
+$ kompose --file docker-convert.yml convert
+$ kompose --provider openshift --file docker-convert.yml convert
 ```
 
 Voir: https://kubernetes.io/docs/tools/kompose/user-guide/
@@ -300,65 +297,80 @@ $ kubectl get namespaces --show-labels
 
 2/ Créer un namespace:
 ```bash
-$ kubectl create namespace namespace1
-$ kubectl create –f namespace1.yaml
+$ kubectl create namespace tst
+$ kubectl create –f namespace-tst.yaml
 ```
-
 ```yaml  
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: namespace1
+  name: tst
 ```
 
 3/ obtenir des informations sur un namespace:
 ```bash
-$ kubectl describe namespaces kube-system
+$ kubectl describe namespaces tst
 ```
 
 4/ Définir un namespace pour un objet:
 ```bash
-$ kubectl --namespace=namespace1 run nginx –image=nginx
-$ kubectl --namespace=namespace1 get <type>
+$ kubectl --namespace=tst run nginx --image=nginx
+$ kubectl --namespace=tst get <type>
 ```
 
 5/ Définir le namespace par defaut pour toutes les commandes kubectl:
 ```bash
-$ kubectl config set-context $(kubectl config current-context) --namespace=namespace1
+$ kubectl config set-context $(kubectl config current-context) --namespace=tst
 $ kubectl config view | grep namespace
 ```
 
 6/ Supprimer un namespace :
 ```bash
-$ kubectl delete namespace namespace1
+$ kubectl delete namespace tst
 ```
+
+---------------------------------------------------------------------------------------------------------------
+## ResourceQuota:
+---------------------------------------------------------------------------------------------------------------
+1/ Créer un ResourceQuota
+```yaml  
+ apiVersion:   v1 
+  kind:   ResourceQuota 
+  metadata: 
+    name:   quota
+  spec: 
+    hard: 
+      requests.cpu:   "1" 
+      requests.memory:   1Gi 
+      limits.cpu:   "2" 
+      limits.memory:   2Gi 
+```
+```bash
+$ kubectl create -f resourcequota.yaml --namespace=tst
+```
+
+Afficher des informations détaillées sur le ResourceQuota:
+```bash
+$ kubectl get resourcequota quota --namespace=tst --output=yaml 
+$ kubectl describe namespaces tst
+```
+
+voir : https://kubernetes.io/docs/concepts/policy/resource-quotas/
+
 
 
 ---------------------------------------------------------------------------------------------------------------
 ## NETWORK POLICY:
 ---------------------------------------------------------------------------------------------------------------
-```yaml  
-kind: Namespace
-apiVersion: v1
-metadata:
-   annotations:
-      net.beta.kubernetes.io/network-policy: |
-      {
-         "ingress": 
-         {
-            "isolation": "DefaultDeny"
-         }
-      }
-$ kubectl annotate ns <namespace> "net.beta.kubernetes.io/network-policy = 
-{\"ingress\": {\"isolation\": \"DefaultDeny\"}}"
-```
+*Un podSelector vide sélectionne tous les pods de l'espace de noms.
+* chaque politique NetworkPolicy comprend une liste policyTypes pouvant inclure Ingress , Egress ou les deux.Si aucun type de policyTypes n'est spécifié sur un NetworkPolicy, par défaut, Ingress sera toujours défini et Egress sera défini si NetworkPolicy a des règles de sortie.
 
 ```yaml
-kind: NetworkPolicy
 apiVersion: extensions/v1beta1
+kind: NetworkPolicy
 metadata:
-   name: allow-frontend
-   namespace: myns
+   name: policyfrontend
+   namespace: tst
 spec:
    podSelector:
       matchLabels:
