@@ -349,7 +349,7 @@ $ kubectl delete namespace tst
 $ kubectl create -f resourcequota.yaml --namespace=tst
 ```
 
-Afficher des informations détaillées sur le ResourceQuota:
+Assigner et afficher les ResourceQuota:
 ```bash
 $ kubectl get resourcequota quota --namespace=tst --output=yaml 
 $ kubectl describe namespaces tst
@@ -358,32 +358,6 @@ $ kubectl describe namespaces tst
 voir : https://kubernetes.io/docs/concepts/policy/resource-quotas/
 
 
-
----------------------------------------------------------------------------------------------------------------
-## NETWORK POLICY:
----------------------------------------------------------------------------------------------------------------
-*Un podSelector vide sélectionne tous les pods de l'espace de noms.
-* chaque politique NetworkPolicy comprend une liste policyTypes pouvant inclure Ingress , Egress ou les deux.Si aucun type de policyTypes n'est spécifié sur un NetworkPolicy, par défaut, Ingress sera toujours défini et Egress sera défini si NetworkPolicy a des règles de sortie.
-
-```yaml
-apiVersion: extensions/v1beta1
-kind: NetworkPolicy
-metadata:
-   name: policyfrontend
-   namespace: tst
-spec:
-   podSelector:
-      matchLabels:
-         role: backend
-   ingress:
-   - from:
-      - podSelector:
-         matchLabels:
-            role: frontend
-   ports:
-      - protocol: TCP
-         port: 6379
-```
 
 
 
@@ -395,34 +369,30 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: monpod
-  namespace: dev
+  name: simplepod
+  namespace: tst
 spec:
   containers:
   - name: container1
-    image: Debian
-    env:
-    - name: MESSAGE
-      value: "Hello Word"
-    ports:
-     containerPort: 7500
-    command: ["printenv"]
-    args: ["HOSTNAME", "KUBERNETES_PORT", "$(MESSAGE)"]
-  restartPolicy: OnFailure
-  - name: container2
-    image: Centos
-    Ports:
-     containerPort: 7501
+    image: centos
     command: ["/bin/sh"]
     args: ["-c", "while true; do echo hello; sleep 10;done"]
+    resources:  #Si absent: error from server (Forbidden) car ResourceQuota present
+     limits:
+      memory: "200Mi"
+      cpu: "1"
+      ephemeral-storage: "4Gi"
+     requests: 
+      memory: "100Mi"
+      cpu: "0.5"
 ```
 
-2/ Création du Pod à partir d'un fichier manifest:
+2/ Création du Pod à partir du fichier manifest:
 ```bash
-$ kubectl create –f mon-fichier.yaml  (--namespace=namespace1)
+$ kubectl create –f simplepod.yaml --record --namespace=tst
 (--record enregistre la commande en cours dans les annotations. Utile pour une révision ultérieure)
 ```
-A la différences des "Multi container pod", les "Single Container Pod" peuvent être simplement créés avec la commande kubctl run.
+*A la différences des "Multi container pod", les "Single Container Pod" peuvent être créés avec la commande kubctl run.
 ```bash
 $ kubectl run <name of pod> --image=<name of the image from registry>
 $ kubectl run tomcat --image = tomcat:8.0
@@ -430,32 +400,33 @@ $ kubectl run tomcat --image = tomcat:8.0
 
 3/ Afficher les Pods en cours d’execution:
 ```bash
-$ kubectl get pod
-$ kubectl get pod monpod -o wide
+$ kubectl get pod --namespace=tst
+$ kubectl get pod simplepod --namespace=tst -o wide
  *(-o wide permet d'afficher le Node auquel le pod a été assigné)
-
-$ kubectl get pod monpod --namespace=namespace1 -o yaml
+$ kubectl get pod simplepod --namespace=tst -o yaml
  *(-o yaml "--output=yaml" spécifie d’afficher la configuration complette de l'objet)
 ```
 
 4/ Voir des informations détaillées sur l'histoire et le status du Pod:
 ```bash
-$  kubectl describe pod monpod --namespace=namespace1 
+$  kubectl describe pod simplepod --namespace=tst
 ```
 
-5/ Pour voir le résultat de la commande qui a été exécutée dans le conteneur, affichez les journaux du pod:`
+5/ Voir le résultat de la commande exécuté dans le conteneur, affichez les journaux du pod:`
 ```bash
-$ kubectl log monpod
+$ kubectl log simplepod
 ```
 
 6/ S'attacher à un conteneur en cours d'exécution dans un Pod.
 ```bash
-$ kubectl attach <pod> –c <container>
+$ kubectl attach simplepod
+$ kubectl attach simplepod -c container1
 ```
 
-7/ Obtenez un shell dans le conteneur de votre pod:
+7/ Exécuter une commande dans un conteneur:
 ```bash
-$ kubectl exec -it name_container --/bin/bash
+$ kubectl exec simplepod date
+$ kubectl exec -it simplepod -- /bin/bash
 ```
 Dans votre shell, exécutez la commande "printenv" pour répertorier les variables d’environnement.
 
@@ -533,6 +504,47 @@ $ kubectl annotate pods monpod description='my frontend'
 
 7/ Recréer plusieurs Pods avec des nom et labels différents 
 
+
+
+---------------------------------------------------------------------------------------------------------------
+## NETWORK POLICY:
+---------------------------------------------------------------------------------------------------------------
+*Un podSelector vide sélectionne tous les pods de l'espace de noms.
+* chaque politique NetworkPolicy comprend une liste policyTypes pouvant inclure Ingress , Egress ou les deux.Si aucun type de policyTypes n'est spécifié sur un NetworkPolicy, par défaut, Ingress sera toujours défini et Egress sera défini si NetworkPolicy a des règles de sortie.
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: NetworkPolicy
+metadata:
+   name: policyfrontend
+   namespace: tst
+spec:
+   podSelector:
+      matchLabels:
+         role: backend
+  policyTypes: 
+  -   Ingress 
+  -   Egress 
+  ingress:	 
+   - from:
+      - podSelector:
+         matchLabels:
+            role: db
+   ports:
+      - protocol: TCP
+         port: 6379
+egress: 
+  -   to: 
+    -   ipBlock: 
+        cidr:   10.0.0.0/24 
+    ports: 
+    -   protocol:   TCP 
+      port:   5978
+```
+
+- La NetworkPolicy du nom de "policyfrontend", isole les pods identifiés par le label "role=frontend" dans le namespace "tst" pour le trafic entrant "Ingress" et sortant "Egress". Sur l'ensemble des pods selectionné, elle identifie ceux contenant le label "role=db" et leurs autorise les connexions entrante sur le port TCP 6379.
+
+voir: https://kubernetes.io/docs/concepts/services-networking/network-policies/
 
 
 ---------------------------------------------------------------------------------------------------------------
