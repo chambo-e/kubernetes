@@ -424,17 +424,26 @@ $ kubectl attach simplepod -c container1
 ```
 
 7/ Exécuter une commande dans un conteneur:
+ - Récupère le résultat de l'exécution de 'date' à partir du pod "simplepod"
 ```bash
 $ kubectl exec simplepod date
-$ kubectl exec -it simplepod -- /bin/bash
 ```
-Dans votre shell, exécutez la commande "printenv" pour répertorier les variables d’environnement.
+ - Récupère le résultat de l'exécution de 'date' dans le conteneur "container1" du pod "simplepod"
+```bash
+$ kubectl exec simplepod -c container1 date
+```
+ - Récupérer la stdin de "container1" à partir du simplepod :
+ ```bash
+ $ kubectl exec -it simplepod -- /bin/bash
+ $ kubectl exec simplepod -c container1 -it -- bash -il
+```
+*Dans votre shell, exécutez la commande "printenv" pour répertorier les variables d’environnement.
 
 
 8/ Supprimez un Pod:
 ```bash
-$ kubectl delete pod monpod –-namespace=namespace1
-$ kubectl delete –grace-period=0 --force pod monpod --namespace=namespace1
+$ kubectl delete pod simplepod --namespace=tst
+$ kubectl delete -grace-period=0 --force pod simplepod --namespace=tst
  *(Remplacer la valeur de grace par défaut "La valeur 0 force la suppression du Pod")
 ```
 
@@ -448,58 +457,66 @@ $ kubectl delete –grace-period=0 --force pod monpod --namespace=namespace1
 apiVersion: v1
 kind: LimitRange
 metadata:
-  name: cpu-limit-range
+  name: limitrange
 spec:
   limits:
   - default:
-      cpu: 1
+      cpu: 3
+      memory: "1000Mi"
     defaultRequest:
-      cpu: 0.5
+      cpu: 1.5
+      memory: "500Mi"
     type: Container
 ```
 
 2/ Créez le LimitRange dans l'espace de noms
 ```bash
-$ kubectl create -f cpu-defaults.yaml --namespace=namespace1
+$ kubectl create -f limitrange.yaml --namespace=tst
 ```
 
-3/ Créer un Pod dans le namesapce et vérifier les ressources.
-Si un conteneur est créé dans l'espace de noms namespace1 et que le conteneur ne spécifie pas ses propres valeurs pour la demande CPU et la limite de l'UC, le conteneur reçoit une demande CPU par défaut de 0,5 et une limite par défaut de 1.
+3/ Créer un simplepod dans le namesapce "tst" et vérifier les ressources:
+Assigner et afficher les ResourceQuota:
+```bash
+$ kubectl get resourcequota quota --namespace=tst --output=yaml 
+$ kubectl describe namespaces tst
+```
+
+Si un conteneur est créé dans un namespace  et qu'il ne spécifie pas ses propres valeurs pour la demande de resources, le conteneur reçoit une demande par défaut correspondant au LimiRange associé au namespace.
 
 
 
 ---------------------------------------------------------------------------------------------------------------
 ## Labels & selector
 ---------------------------------------------------------------------------------------------------------------
-1/ Attribuer des labels à un Pod:
+1/ Afficher les labels générées pour chaque pod:
 ```bash
-$ kubectl label pods monpod environment=production tier=frontend
+$ kubectl get pods --show-labels –-namespace=tst
 ```
 
-2/ Afficher les labels générées pour chaque pod:
+2/ Attribuer des labels à un Pod:
 ```bash
-$ kubectl get pods --show-labels –-namespace=namespace1
+$ kubectl label pods simplepod environment=tst tier=frontend
 ```
 
 3/ Effectuer une recherche avec le selector equality-base:
 ```bash
-$ kubectl get pods -l environment=production,tier=frontend
+$ kubectl get pods -l environment=tst,tier=frontend
 ```
-*equality-base permet de filtrer par clé et par valeur. Les objets correspondants doivent satisfaire à toutes les étiquettes spécifiées.
+*equality-base permet de filtrer par clé et par valeur. Les objets correspondants doivent satisfaire à tous les labels spécifiées.
 
 4/ Effectuer une recherche avec le selector set-based:
 ```bash
-$ kubectl get pods -l 'environment in (production),tier in (frontend)'
+$ kubectl get pods -l 'environment in (tst),tier in (frontend)'
 ```
 
-5/ Supprimer des Pods avec une recherche avec le selector equality-base:
+5/ Supprimer des Pods par une recherche avec le selector equality-base:
 ```bash
-$ kubectl delete pods -l environment=production,tier=frontend
+$ kubectl delete pods -l environment=tst,tier=frontend
 ```
 
 6/ Attacher une anotation à un Pod:
 ```bash
-$ kubectl annotate pods monpod description='my frontend'
+$ kubectl annotate pods simplepod description='my frontend'
 ```
 
 7/ Recréer plusieurs Pods avec des nom et labels différents 
@@ -555,7 +572,7 @@ voir: https://kubernetes.io/docs/concepts/services-networking/network-policies/
 $ kubectl get nodes 
 ```
 
-2/ Choisir le node et ajoutez-y une étiquette:
+2/ Choisir le node et ajoutez-y un label:
 ```bash
 $ kubectl label nodes <your-node-name> label1=var1
 ```
