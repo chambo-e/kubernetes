@@ -74,7 +74,7 @@ $ kubectl options
 
 1/ Définir une entrée de cluster dans Kubeconfig :
 kubectl config set-cluster NAME [--server=server] [--certificate-authority=...] [--insecure-skip-tls-verify=true] [options]
-*--insecure-skip-tls-verify = Désactive la vérification de certification 
+*--insecure-skip-tls-verify=true(Désactive la vérification de certification)
 
 ```bash
 $ kubectl config get-clusters
@@ -85,20 +85,18 @@ Pour supprimer le cluster:
 $ kubectl config delete-cluster <$CLUSTER_NAME>
 ```
 
-
-2/ Définir les credentials:
+2/ Définir les credentials (entrée utilisateur):
 ```bash
 $ kubectl config set-credentials -h
 $ kubectl config set-credentials $USER --client-certificate=$CLI_CERT --client-key=admin-key.pem --embed-certs=true --token=$TOKEN
 ou
 $ kubectl config set-credentials default-admin --certificateauthority = ${CA_CERT} --client-key = ${ADMIN_KEY} --clientcertificate = ${ADMIN_CERT}
-`
-``
+```
 
-3/ Définissez le context par défaut:
+3/ Définissez le context par défaut dans Entrypoint k8s:
 ```bash
 $ kubectl config get-contexts
-$ kubectl config set-context $CONTEXT_NAME --cluster=$CLUSTER_NAME --user=$USER
+$ kubectl config set-context $CONTEXT_NAME --cluster=$CLUSTER_NAME --user=$USER --namespace=$namespace
 $ kubectl config use-context $CONTEXT_NAME
 $ kubectl config current-context
 
