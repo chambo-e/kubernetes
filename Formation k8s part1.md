@@ -305,15 +305,16 @@ metadata:
   name: tst
 ```
 
-3/ obtenir des informations sur un namespace:
+3/ Obtenir des informations sur un namespace:
 ```bash
 $ kubectl describe namespaces tst
+$ kubectl get all --namespace=tst
+$ kubectl get <type> --namespace=tst 
 ```
 
 4/ Définir un namespace pour un objet:
 ```bash
 $ kubectl --namespace=tst run nginx --image=nginx (obsolete)
-$ kubectl --namespace=tst get <type>
 ```
 
 5/ Définir le namespace par defaut pour toutes les commandes kubectl:
