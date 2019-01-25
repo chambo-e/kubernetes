@@ -354,7 +354,18 @@ $ kubectl get resourcequota quota --namespace=tst --output=yaml
 $ kubectl describe namespaces tst
 ```
 
-3/ Modifier le fichier ymal et remplacer la configuration:
+3/ Modifier le fichier yaml et remplacer la configuration:
+```yaml 
+apiVersion:   v1 
+kind:   ResourceQuota 
+metadata: 
+  name:   quota
+spec: 
+  hard: 
+    limits.cpu:   "5" 
+    limits.memory:   10Gi 
+```
+
 ```bash
 kubectl replace -f resourcequota.yaml
 ```
