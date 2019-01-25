@@ -540,7 +540,7 @@ $ kubectl get pod |grep -i qosClass
 ---------------------------------------------------------------------------------------------------------------
 1/ Afficher les labels générées pour chaque objets (pod, namespace, limitrange, resourcequota...) :
 ```bash
-$ kubectl get pods --show-labels --namespace=tst
+$ kubectl get pod --show-labels --namespace=tst
 $ kubectl get namespaces --show-labels --namespace=tst
 $ kubectl get limitrange --show-labels --namespace=tst
 $ kubectl get resourcequota --show-labels --namespace=tst
@@ -548,8 +548,13 @@ $ kubectl get resourcequota --show-labels --namespace=tst
 
 2/ Attribuer des labels aux objets:
 ```bash
-$ kubectl label pods simplepod1 environment=tst tier=frontend type=pod
+$ kubectl label pod simplepod1 environment=tst tier=frontend type=pod
 $ kubectl label namespace tst environment=tst type=namespace
+```
+
+3/ Vérifier la présence des labels sur les objets (pod, namespace, limitrange, resourcequota...):
+```bash
+$ kubectl get pod --show-labels
 ```
 
 3/ Effectuer une recherche avec le selector equality-base:
@@ -581,28 +586,40 @@ $ kubectl annotate pods simplepod3 description='my frontend'
 ---------------------------------------------------------------------------------------------------------------
 ## Affectation Pod
 ---------------------------------------------------------------------------------------------------------------
-1/ répertoriez les nodes du cluster:
+1/ répertoriez les nodes disponibles sur le cluster:
 ```bash
 $ kubectl get nodes 
 ```
 
-2/ Choisir le node et ajoutez-y un label:
+2/ Ajouter les labels au node:
 ```bash
-$ kubectl label nodes <your-node-name> label1=var1
+$ kubectl label nodes node1 affect=node1
 ```
 
-3/ Vérifiez que le node que vous avez choisi possède le nouveau label : 
+3/ Vérifiez que le node possède bien le nouveau label : 
 ```bash
 $  kubectl get nodes --show-labels 
 ```
 
-4/ Créer un pod planifié sur le node choisi grace au sélecteur de node (node qui a un label label1=var1):
+4/ Créer un pod "simplepod4" planifié sur le node choisi grace au sélecteur de node (node qui a un label label1=var1):
 ```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simplepod4
+  namespace: tst
 spec:
-  containers:
-  ...
+  restartPolicy: Never
   nodeSelector:
-    label1: var1
+    affect: node1
+  containers:
+  - name: container4
+    image: centos
+    command: ["/bin/sh"]
+    args: ["-c", "while true; do echo hello; sleep 10;done"]
+```
+```bash
+$ kubectl create -f simplepod4.yaml
 ```
 
 5/ Vérifiez que le pod est bien en cours d'exécution sur le node choisi:
