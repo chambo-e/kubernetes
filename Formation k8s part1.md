@@ -375,7 +375,6 @@ voir : https://kubernetes.io/docs/concepts/policy/resource-quotas/
 
 
 
-
 ---------------------------------------------------------------------------------------------------------------
 ## Les Pods
 ---------------------------------------------------------------------------------------------------------------
@@ -417,11 +416,13 @@ $ kubectl describe pod simplepod1
 $ kubectl run tomcat --image=tomcat:8.0 (obsolete)
 ```
 
-3/ Afficher les Pods en cours d’execution:
+3/ Afficher les informations sur les Pods en cours d’execution:
 ```bash
 $ kubectl get pod --namespace=tst
+$ kubectl get pod --namespace=tst -o wide
 $ kubectl get pod simplepod1 --namespace=tst -o wide
  *(-o wide permet d'afficher le Node auquel le pod a été assigné)
+ $ kubectl get pod --namespace=tst -o yaml
 $ kubectl get pod simplepod1 --namespace=tst -o yaml
  *(-o yaml "--output=yaml" spécifie d’afficher la configuration complette de l'objet)
 ```
@@ -456,16 +457,15 @@ $ kubectl exec simplepod1 -c container1 date
  $ kubectl exec -it simplepod1 -- /bin/bash
  $ kubectl exec simplepod1 -c container1 -it -- bash -il
 ```
-*Dans votre shell, exécutez la commande "printenv" pour répertorier les variables d’environnement.
+*Dans le shell, exécutez la commande "printenv" pour répertorier les variables d’environnement.
 
 
 8/ Supprimez un Pod:
 ```bash
 $ kubectl delete pod simplepod1 --namespace=tst
-$ kubectl delete -grace-period=0 --force pod simplepod1 --namespace=tst
+$ kubectl delete --grace-period=0 --force pod simplepod1 --namespace=tst
  *(Remplacer la valeur de grace par défaut "La valeur 0 force la suppression du Pod")
 ```
-
 
 
 ---------------------------------------------------------------------------------------------------------------
@@ -493,28 +493,63 @@ spec:
 $ kubectl create -f limitrange.yaml --namespace=tst
 ```
 
-3/ Créer un simplepod2 dans le namesapce "tst" et vérifier les ressources:
-Assigner et afficher les ResourceQuota:
+3/ Créer un simplepod3 sans spécifier de ressources:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simplepod3
+  namespace: tst
+spec:
+  restartPolicy: Always
+  containers:
+  - name: container3
+    image: centos
+    command: ["/bin/sh"]
+    args: ["-c", "while true; do echo hello; sleep 10;done"]
+```   
 ```bash
-$ kubectl get resourcequota quota --namespace=tst --output=yaml 
+$ kubectl create -f limitrange.yaml --namespace=tst
+```
+
+Vérifier les ressources attribuer pour le "pod", "limirange", "ResourceQuota" et "namespace":
+```bash
+$ kubectl describe po simplepod3
+$ kubectl describe limitrange
+$ kubectl get resourcequota quota --output=yaml 
 $ kubectl describe namespaces tst
 ```
 
-Si un conteneur est créé dans un namespace  et qu'il ne spécifie pas ses propres valeurs pour la demande de resources, le conteneur reçoit une demande par défaut correspondant au LimiRange associé au namespace.
+Si un conteneur est créé dans un namespace et qu'il ne spécifie pas ses propres valeurs pour la demande de resources, le conteneur reçoit une demande par défaut correspondant au LimiRange associé a ce namespace.
+
+
+
+---------------------------------------------------------------------------------------------------------------
+## QoS pod
+---------------------------------------------------------------------------------------------------------------
+
+1/ Assigné une classe Guaranteed, Burstable et BestEffort au Pod et afficher le résultat:
+```bash
+$ kubectl get pod |grep -i qosClass
+```
 
 
 
 ---------------------------------------------------------------------------------------------------------------
 ## Labels & selector
 ---------------------------------------------------------------------------------------------------------------
-1/ Afficher les labels générées pour chaque pod:
+1/ Afficher les labels générées pour chaque objets (pod, namespace, limitrange, resourcequota...) :
 ```bash
-$ kubectl get pods --show-labels –-namespace=tst
+$ kubectl get pods --show-labels --namespace=tst
+$ kubectl get namespaces --show-labels --namespace=tst
+$ kubectl get limitrange --show-labels --namespace=tst
+$ kubectl get resourcequota --show-labels --namespace=tst
 ```
 
-2/ Attribuer des labels à un Pod:
+2/ Attribuer des labels aux objets:
 ```bash
-$ kubectl label pods simplepod environment=tst tier=frontend
+$ kubectl label pods simplepod1 environment=tst tier=frontend type=pod
+$ kubectl label namespace tst environment=tst type=namespace
 ```
 
 3/ Effectuer une recherche avec le selector equality-base:
@@ -528,17 +563,52 @@ $ kubectl get pods -l environment=tst,tier=frontend
 $ kubectl get pods -l 'environment in (tst),tier in (frontend)'
 ```
 
-5/ Supprimer des Pods par une recherche avec le selector equality-base:
+5/ Supprimer un objet par une recherche avec le selector equality-base:
 ```bash
+$ kubectl describe po simplepod1
 $ kubectl delete pods -l environment=tst,tier=frontend
 ```
 
 6/ Attacher une anotation à un Pod:
 ```bash
-$ kubectl annotate pods simplepod description='my frontend'
+$ kubectl annotate pods simplepod3 description='my frontend'
 ```
 
-7/ Recréer plusieurs Pods avec des nom et labels différents 
+7/ Recréer plusieurs Pods avec des nom, labels et anotations différentes 
+
+
+
+---------------------------------------------------------------------------------------------------------------
+## Affectation Pod
+---------------------------------------------------------------------------------------------------------------
+1/ répertoriez les nodes du cluster:
+```bash
+$ kubectl get nodes 
+```
+
+2/ Choisir le node et ajoutez-y un label:
+```bash
+$ kubectl label nodes <your-node-name> label1=var1
+```
+
+3/ Vérifiez que le node que vous avez choisi possède le nouveau label : 
+```bash
+$  kubectl get nodes --show-labels 
+```
+
+4/ Créer un pod planifié sur le node choisi grace au sélecteur de node (node qui a un label label1=var1):
+```yaml
+spec:
+  containers:
+  ...
+  nodeSelector:
+    label1: var1
+```
+
+5/ Vérifiez que le pod est bien en cours d'exécution sur le node choisi:
+```bash
+$ kubectl get pods --output=wide 
+```
 
 
 
@@ -581,50 +651,6 @@ egress:
 - La NetworkPolicy du nom de "policyfrontend", isole les pods identifiés par le label "role=frontend" dans le namespace "tst" pour le trafic entrant "Ingress" et sortant "Egress". Sur l'ensemble des pods selectionné, elle identifie ceux contenant le label "role=db" et leurs autorise les connexions entrante sur le port TCP 6379.
 
 voir: https://kubernetes.io/docs/concepts/services-networking/network-policies/
-
-
----------------------------------------------------------------------------------------------------------------
-## Affectation Pod
----------------------------------------------------------------------------------------------------------------
-1/ répertoriez les nodes du cluster:
-```bash
-$ kubectl get nodes 
-```
-
-2/ Choisir le node et ajoutez-y un label:
-```bash
-$ kubectl label nodes <your-node-name> label1=var1
-```
-
-3/ Vérifiez que le node que vous avez choisi possède le nouveau label : 
-```bash
-$  kubectl get nodes --show-labels 
-```
-
-4/ Créer un pod planifié sur le node choisi grace au sélecteur de node (node qui a un label label1=var1):
-```yaml
-spec:
-  containers:
-  ...
-  nodeSelector:
-    label1: var1
-```
-
-5/ Vérifiez que le pod est bien en cours d'exécution sur le node choisi:
-```bash
-$ kubectl get pods --output=wide 
-```
-
-
-
----------------------------------------------------------------------------------------------------------------
-## QoS pod
----------------------------------------------------------------------------------------------------------------
-
-1/ Assigné une classe Guaranteed, Burstable et BestEffort au Pod et afficher le résultat:
-```bash
-$ kubectl get pod |grep -i qosClass
-```
 
 
 
