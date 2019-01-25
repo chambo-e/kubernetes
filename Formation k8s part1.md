@@ -394,7 +394,7 @@ spec:
     - name: MESSAGE
       value: "Hello Word"
     command: ["/bin/sh"]
-    args: ["-c", "while true; do echo $(MESSAGE); sleep 10;done"]
+    args: ["-c", "while true; do echo '$(MESSAGE)'; sleep 10;done"]
     #command: ["printenv"]
     #args: ["HOSTNAME", "KUBERNETES_PORT", "$(MESSAGE)"]
     resources:  #Si absent: error from server (Forbidden) car ResourceQuota present
@@ -408,8 +408,9 @@ spec:
 
 2/ Création du Pod à partir du manifest:
 ```bash
-$ kubectl create –f simplepod.yaml --record --namespace=tst
+$ kubectl create -f simplepod1.yaml --record --namespace=tst
 (--record enregistre la commande en cours dans les annotations. Utile pour une révision ultérieure)
+$ kubectl describe pod simplepod1
 ```
 *A la différences des "Multi container pod", les "Single Container Pod" peuvent être créés avec la commande kubctl run.
 ```bash
@@ -419,49 +420,49 @@ $ kubectl run tomcat --image=tomcat:8.0 (obsolete)
 3/ Afficher les Pods en cours d’execution:
 ```bash
 $ kubectl get pod --namespace=tst
-$ kubectl get pod simplepod --namespace=tst -o wide
+$ kubectl get pod simplepod1 --namespace=tst -o wide
  *(-o wide permet d'afficher le Node auquel le pod a été assigné)
-$ kubectl get pod simplepod --namespace=tst -o yaml
+$ kubectl get pod simplepod1 --namespace=tst -o yaml
  *(-o yaml "--output=yaml" spécifie d’afficher la configuration complette de l'objet)
 ```
 
 4/ Voir des informations détaillées sur l'histoire et le status du Pod:
 ```bash
-$  kubectl describe pod simplepod --namespace=tst
+$  kubectl describe pod simplepod1 --namespace=tst
 ```
 
 5/ Voir le résultat de la commande exécuté dans le conteneur, affichez les journaux du pod:`
 ```bash
-$ kubectl log simplepod
+$ kubectl log simplepod1
 ```
 
 6/ S'attacher à un conteneur en cours d'exécution dans un Pod.
 ```bash
-$ kubectl attach simplepod
-$ kubectl attach simplepod -c container1
+$ kubectl attach simplepod1
+$ kubectl attach simplepod1 -c container1
 ```
 
 7/ Exécuter une commande dans un conteneur:
- - Récupère le résultat de l'exécution de 'date' à partir du pod "simplepod"
+ - Récupère le résultat de l'exécution de 'date' à partir du pod "simplepod1"
 ```bash
-$ kubectl exec simplepod date
+$ kubectl exec simplepod1 date
 ```
- - Récupère le résultat de l'exécution de 'date' dans le conteneur "container1" du pod "simplepod"
+ - Récupère le résultat de l'exécution de 'date' dans le conteneur "container1" du pod "simplepod1"
 ```bash
-$ kubectl exec simplepod -c container1 date
+$ kubectl exec simplepod1 -c container1 date
 ```
- - Récupérer la stdin de "container1" à partir du simplepod :
+ - Récupérer la stdin de "container1" à partir du simplepod1 :
  ```bash
- $ kubectl exec -it simplepod -- /bin/bash
- $ kubectl exec simplepod -c container1 -it -- bash -il
+ $ kubectl exec -it simplepod1 -- /bin/bash
+ $ kubectl exec simplepod1 -c container1 -it -- bash -il
 ```
 *Dans votre shell, exécutez la commande "printenv" pour répertorier les variables d’environnement.
 
 
 8/ Supprimez un Pod:
 ```bash
-$ kubectl delete pod simplepod --namespace=tst
-$ kubectl delete -grace-period=0 --force pod simplepod --namespace=tst
+$ kubectl delete pod simplepod1 --namespace=tst
+$ kubectl delete -grace-period=0 --force pod simplepod1 --namespace=tst
  *(Remplacer la valeur de grace par défaut "La valeur 0 force la suppression du Pod")
 ```
 
@@ -492,7 +493,7 @@ spec:
 $ kubectl create -f limitrange.yaml --namespace=tst
 ```
 
-3/ Créer un simplepod dans le namesapce "tst" et vérifier les ressources:
+3/ Créer un simplepod2 dans le namesapce "tst" et vérifier les ressources:
 Assigner et afficher les ResourceQuota:
 ```bash
 $ kubectl get resourcequota quota --namespace=tst --output=yaml 
