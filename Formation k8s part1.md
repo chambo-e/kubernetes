@@ -348,10 +348,15 @@ $ kubectl delete namespace tst
 $ kubectl create -f resourcequota.yaml --namespace=tst
 ```
 
-Afficher les ResourceQuota:
+2/ Afficher les ResourceQuota:
 ```bash
 $ kubectl get resourcequota quota --namespace=tst --output=yaml 
 $ kubectl describe namespaces tst
+```
+
+3/ Modifier le fichier ymal et remplacer la configuration:
+```bash
+kubectl replace -f resourcequota.yaml
 ```
 
 voir : https://kubernetes.io/docs/concepts/policy/resource-quotas/
