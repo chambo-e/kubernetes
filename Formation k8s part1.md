@@ -312,7 +312,7 @@ $ kubectl describe namespaces tst
 
 4/ Définir un namespace pour un objet:
 ```bash
-$ kubectl --namespace=tst run nginx --image=nginx
+$ kubectl --namespace=tst run nginx --image=nginx (obsolete)
 $ kubectl --namespace=tst get <type>
 ```
 
@@ -340,14 +340,14 @@ $ kubectl delete namespace tst
     hard: 
       requests.cpu:   "1" 
       requests.memory:   1Gi 
-      limits.cpu:   "2" 
-      limits.memory:   2Gi 
+      limits.cpu:   "5" 
+      limits.memory:   10Gi 
 ```
 ```bash
 $ kubectl create -f resourcequota.yaml --namespace=tst
 ```
 
-Assigner et afficher les ResourceQuota:
+Afficher les ResourceQuota:
 ```bash
 $ kubectl get resourcequota quota --namespace=tst --output=yaml 
 $ kubectl describe namespaces tst
@@ -362,38 +362,41 @@ voir : https://kubernetes.io/docs/concepts/policy/resource-quotas/
 ---------------------------------------------------------------------------------------------------------------
 ## Les Pods
 ---------------------------------------------------------------------------------------------------------------
-1/ Création d’un fichier manifest (YAML) initial :
+1/ Création d’un fichier manifest (YAML) pour un Pod à un container :
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: simplepod
+  name: simplepod1
   namespace: tst
 spec:
   containers:
   - name: container1
     image: centos
+    env:
+    - name: MESSAGE
+      value: "Hello Word"
     command: ["/bin/sh"]
-    args: ["-c", "while true; do echo hello; sleep 10;done"]
+    args: ["-c", "while true; do echo $(MESSAGE); sleep 10;done"]
+    #command: ["printenv"]
+    #args: ["HOSTNAME", "KUBERNETES_PORT", "$(MESSAGE)"]
     resources:  #Si absent: error from server (Forbidden) car ResourceQuota present
      limits:
       memory: "200Mi"
       cpu: "1"
-      ephemeral-storage: "4Gi"
      requests: 
       memory: "100Mi"
       cpu: "0.5"
 ```
 
-2/ Création du Pod à partir du fichier manifest:
+2/ Création du Pod à partir du manifest:
 ```bash
 $ kubectl create –f simplepod.yaml --record --namespace=tst
 (--record enregistre la commande en cours dans les annotations. Utile pour une révision ultérieure)
 ```
 *A la différences des "Multi container pod", les "Single Container Pod" peuvent être créés avec la commande kubctl run.
 ```bash
-$ kubectl run <name of pod> --image=<name of the image from registry>
-$ kubectl run tomcat --image = tomcat:8.0
+$ kubectl run tomcat --image=tomcat:8.0 (obsolete)
 ```
 
 3/ Afficher les Pods en cours d’execution:
