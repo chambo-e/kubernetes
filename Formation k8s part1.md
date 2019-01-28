@@ -552,6 +552,7 @@ $ kubectl label pod simplepod1 environment=tst tier=frontend type=pod
 $ kubectl label namespace tst environment=tst type=namespace
 ```
 
+
 3/ Vérifier la présence des labels sur les objets (pod, namespace, limitrange, resourcequota...):
 ```bash
 $ kubectl get pod --show-labels
@@ -581,7 +582,19 @@ $ kubectl annotate pods simplepod3 description='my frontend'
 
 7/ Recréer plusieurs Pods avec des nom, labels et anotations différentes 
 
-
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simplepod1
+  namespace: tst
+  annotations:
+    description: my frontend
+  labels:
+    environment: "tst"
+    tier: "frontend"
+...
+```  
 
 ---------------------------------------------------------------------------------------------------------------
 ## Affectation Pod
