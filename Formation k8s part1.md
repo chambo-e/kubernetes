@@ -692,7 +692,7 @@ tolerations:
 
 2/ Supprimer l'altération sur le node:
 ```bash
-$ kubectl taint nodes node1 key:NoSchedule-
+$ kubectl taint nodes node1 Mykey:NoSchedule-
 ```
 
 
@@ -703,9 +703,8 @@ Voir: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 ---------------------------------------------------------------------------------------------------------------
 ## Security Context
 ---------------------------------------------------------------------------------------------------------------
-1/ Configurer un contexte de sécurité (mode privilége) pour un pod avec un volume:
-- runAsUser: spécifie que pour tout Conteneur du Pod, le premier processus s'exécute avec l'ID utilisateur 1000. 
-- fsGroup: spécifie que l'ID de groupe 2000 est associé à tous les Conteneurs du Pod.L'ID de groupe est également associé au volume monté.
+1/ Créer un Pod et configurer un contexte de sécurité (mode privilége) pour le pod et le contenair:
+
 
 ```yaml
 	spec:
@@ -726,6 +725,9 @@ Voir: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 	      capabilities:
                add: ["NET_ADMIN", "SYS_TIME"]
 ```
+*runAsUser: spécifie que pour tous les conteneur du Pod, le premier processus s'exécute avec l'ID utilisateur 1000. 
+*fsGroup: spécifie que l'ID de groupe 2000 est associé à tous les Conteneurs du Pod.L'ID de groupe est également associé au volume monté.
+
 
 2/ Obtenez un shell et dressez la liste des processus en cours pour vérifier que les processus s'exécutent en tant qu'utilisateur 1000
 ```bash
