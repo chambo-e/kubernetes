@@ -645,44 +645,58 @@ $ kubectl get pods --output=wide
 
 
 ---------------------------------------------------------------------------------------------------------------
-## NETWORK POLICY:
+## TAINTS:
 ---------------------------------------------------------------------------------------------------------------
-*Un podSelector vide sélectionne tous les pods de l'espace de noms.
-* chaque politique NetworkPolicy comprend une liste policyTypes pouvant inclure Ingress , Egress ou les deux.Si aucun type de policyTypes n'est spécifié sur un NetworkPolicy, par défaut, Ingress sera toujours défini et Egress sera défini si NetworkPolicy a des règles de sortie.
 
-```yaml
-apiVersion: extensions/v1beta1
-kind: NetworkPolicy
-metadata:
-   name: policyfrontend
-   namespace: tst
-spec:
-   podSelector:
-      matchLabels:
-         role: backend
-  policyTypes: 
-  -   Ingress 
-  -   Egress 
-  ingress:	 
-   - from:
-      - podSelector:
-         matchLabels:
-            role: db
-   ports:
-      - protocol: TCP
-         port: 6379
-egress: 
-  -   to: 
-    -   ipBlock: 
-        cidr:   10.0.0.0/24 
-    ports: 
-    -   protocol:   TCP 
-      port:   5978
+1/ Ajoutez un taints à un node:
+```bash
+$ kubectl taint nodes node1 Mykey=Myvalue:NoSchedule
+$ kubectl describe no node1 | grep Taints
+```
+*L'affectation "Mykey=Myvalue:NoSchedule" au node signifie qu'aucun pod ne pourra être planifier sur node1, à moins d'avoir une tolérance correspondante.
+
+
+2/ Lancer un nouveau pod "simplepod5" sur le node1 et vérifier le status:
+```bash
+$ kubectl describe po  simplepod5
 ```
 
-- La NetworkPolicy du nom de "policyfrontend", isole les pods identifiés par le label "role=frontend" dans le namespace "tst" pour le trafic entrant "Ingress" et sortant "Egress". Sur l'ensemble des pods selectionné, elle identifie ceux contenant le label "role=db" et leurs autorise les connexions entrante sur le port TCP 6379.
+3/ Spécifiez l'une des tolérances ci-dessous dans le PodSpec du simplepod5 (Operateur: Equal ou Exist) afin que celui-ci soit capable d'être programmé sur node1 :
+```yaml
+tolerations:
+- key: "Mykey"
+  operator: "Equal"
+  value: "Myvalue"
+  effect: "NoSchedule"
 
-voir: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+tolerations:
+- key: "key"
+  operator: "Exists"
+  effect: "NoSchedule"
+```
+*Une tolérance "correspond" à une taint si les clés sont les mêmes et les effets sont les mêmes
+*Deux cas spéciaux:
+ - Une key vide avec opérateur "Exists" correspond à toutes les clés, valeurs et effets, ce qui signifie que tout sera toléré.
+```yaml
+tolerations:
+- operator: "Exists"
+```
+
+ - Un effect vide correspond à tous les effets avec la key “Mykey” .
+```yaml
+tolerations:
+- key: "Mykey"
+  operator: "Exists"
+```
+
+
+2/ Supprimer l'altération sur le node:
+```bash
+$ kubectl taint nodes node1 key:NoSchedule-
+```
+
+
+Voir: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 
 
 
@@ -1426,6 +1440,54 @@ voir
 
 Utiliser un correctif de fusion stratégique pour mettre à jour un déploiement:
 https://kubernetes.io/docs/tasks/run-application/update-api-object-kubectl-patch/
+
+
+
+---------------------------------------------------------------------------------------------------------------
+## NETWORK POLICY:
+---------------------------------------------------------------------------------------------------------------
+
+$ kubectl create deployment nginx --image=nginx
+
+*Un podSelector vide sélectionne tous les pods de l'espace de noms.
+* chaque politique NetworkPolicy comprend une liste policyTypes pouvant inclure Ingress , Egress ou les deux.Si aucun type de policyTypes n'est spécifié sur un NetworkPolicy, par défaut, Ingress sera toujours défini et Egress sera défini si NetworkPolicy a des règles de sortie.
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: NetworkPolicy
+metadata:
+   name: policyfrontend
+   namespace: tst
+spec:
+   podSelector:
+      matchLabels:
+         role: backend
+  policyTypes: 
+  -   Ingress 
+  -   Egress 
+  ingress:	 
+   - from:
+      - podSelector:
+         matchLabels:
+            role: db
+   ports:
+      - protocol: TCP
+         port: 6379
+egress: 
+  -   to: 
+    -   ipBlock: 
+        cidr:   10.0.0.0/24 
+    ports: 
+    -   protocol:   TCP 
+      port:   5978
+```
+
+- La NetworkPolicy du nom de "policyfrontend", isole les pods identifiés par le label "role=frontend" dans le namespace "tst" pour le trafic entrant "Ingress" et sortant "Egress". Sur l'ensemble des pods selectionné, elle identifie ceux contenant le label "role=db" et leurs autorise les connexions entrante sur le port TCP 6379.
+
+voir: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+
+
+
 
 
 ---------------------------------------------------------------------------------------------------------------
