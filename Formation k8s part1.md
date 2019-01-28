@@ -133,6 +133,8 @@ Affiche les informations pertinentes concernant le cluster pour le débogage et 
 2/ Vérifiez le status de chaque composant:
 ```bash
 $ kubectl get cs
+$ kubectl get all --all-namespaces
+$ kubectl get pods --all-namespaces
 ```
 
 5/ Obtenez des informations sur les nodes du cluster:
