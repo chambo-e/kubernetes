@@ -782,44 +782,53 @@ Les sondes HTTP ont des champs supplémentaires qui peuvent être définis :
 
 3/ Définir une sonde d'activité qui utilise une requête TCPSocket:
 ```yaml
-	spec:
-	  containers:
-	    ...
-	    - containerPort: 8080
-	    readinessProbe:
-	      tcpSocket:
-		port: 8080
-	      initialDelaySeconds: 5
-	      periodSeconds: 10
-	    livenessProbe:
-	      tcpSocket:
-		port: 8080
-	      initialDelaySeconds: 15
-	      periodSeconds: 20
+apiVersion: v1
+kind: Pod
+metadata:
+  name: goproxy
+  labels:
+    app: goproxy
+spec:
+  containers:
+  - name: goproxy
+    image: k8s.gcr.io/goproxy:0.1
+    ports:
+    - containerPort: 8080
+    readinessProbe:
+      tcpSocket:
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      tcpSocket:
+        port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 20
 ```
-
 - Cet exemple utilise à la fois des sondes de disponibilité (Readiness) et de vivacité (Liveness). 
 - kubelet envoie la première sonde de disponibilité 5 secondes après le démarrage du conteneur. 
-- Cela tentera de se connecter au conteneur sur le port 8080. Si la sonde réussit, le pod sera marqué comme prêt. 
-- Le kubelet continuera à exécuter cette vérification toutes les 10 secondes.
+- Il tente de se connecter au Pod sur le port 8080. Si la sonde réussit, le pod sera marqué comme prêt. 
+- kubelet continuera à exécuter cette vérification toutes les 10 secondes.
 
-- kubelet lancera la première sonde de vivacité 15 secondes après le début du conteneur. 
-- Tout comme la sonde de disponibilité, elle tentera de se connecter au conteneur goproxy sur le port 8080. 
+- kubelet lance la première sonde de vivacité 15 secondes après le début du conteneur. 
+- Tout comme la sonde de disponibilité, il tente de se connecter au conteneur goproxy sur le port 8080. 
 - Si la sonde d'activité échoue, le conteneur sera redémarré.
 
 4/ Utiliser un port nommé:
 Utiliser un ContainerPort nommé pour les contrôles d'activité HTTP ou TCP:
 ```yaml
-	ports:
-	- name: liveness-port
-	  containerPort: 8080
-	  hostPort: 8080
+ports:
+- name: liveness-port
+  containerPort: 8080
+  hostPort: 8080
 
-	livenessProbe:
-	  httpGet:
-	    path: /healthz
-	    port: liveness-port
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: liveness-port
 ```
+
+Voir: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
 
 
 ---------------------------------------------------------------------------------------------------------------
