@@ -663,11 +663,14 @@ $ kubectl describe po  simplepod5
 
 3/ Spécifiez l'une des tolérances ci-dessous dans le PodSpec du simplepod5 (Operateur: Equal ou Exist) afin que celui-ci soit capable d'être programmé sur node1 :
 ```yaml
-tolerations:
-- key: "Mykey"
-  operator: "Equal"
-  value: "Myvalue"
-  effect: "NoSchedule"
+spec:
+  tolerations:
+  - key: "Mykey"
+    operator: "Equal"
+    value: "Myvalue"
+    effect: "NoSchedule"
+
+ou
 
 tolerations:
 - key: "key"
@@ -702,32 +705,43 @@ Voir: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 ---------------------------------------------------------------------------------------------------------------
 ## Les sondes (probes)
 ---------------------------------------------------------------------------------------------------------------
-1/ Définir une sonde d'activité qui utilise une requête EXEC:
+1/ Définir un pod avec une sonde d'activité qui utilise une requête EXEC:
 ```yaml
-	spec:
-	  containers:
-	   ...
-	   livenessProbe:
-	    exec:
-	     command:
-	     - cat
-	     - /tmp/healthy
-	     #command: ["mysql", "-h", "127.0.0.1", "-e", "SELECT 1"]  ##méthode 2 
-	    initialDelaySeconds: 5
-	    periodSeconds: 5
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simplepod6
+  namespace: tst
+spec:
+  containers:
+  - name: container6
+    image: centos
+    command: ["/bin/sh"]
+    args: ["-c", "touch /tmp/test; sleep 60; rm -rf /tmp/healthy; sleep 60"]
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/test
+      initialDelaySeconds: 10
+      periodSeconds: 5
 ```
-
 - periodSeconds: spécifie que kubelet doit effectuer une sonde d'activité toutes les 5 secondes (La valeur minimale est 1).
-- initialDelaySeconds: indique a kubelet qu'il doit attendre 5 secondes avant d'effectuer la première sonde. 
-- command: kubelet exécute la commande cat /tmp/healthy dans le conteneur.  Si la commande réussit, elle renvoie 0   (A REVOIR ET AJOUTER LIGNE CI-DESSOUS)
-        *timeoutSeconds: Nombre de secondes après lequel la sonde arrive à expiration. La valeur par défaut est 1 seconde. La valeur minimale est 1.
-        *successThreshold: Succès consécutifs minimum pour que la sonde soit considérée comme ayant réussi après avoir échoué. La valeur par défaut est 1. Doit être 1 pour la vivacité. La valeur minimale est 1.
-        *failureThreshold: Quand un pod démarre et que la sonde échoue, Kubernetes essaiera failureThreshold avant d'abandonner. Abandonner en cas d’analyse signifie relancer le pod. En cas de test de disponibilité, le pod sera marqué comme étant non prêt. La valeur par défaut est 3. La valeur minimale est 1.
+- initialDelaySeconds: indique a kubelet qu'il doit attendre 10 secondes avant d'effectuer la première sonde. 
+- command: kubelet exécute la commande "cat /tmp/test" dans le conteneur.  Si la commande réussit, elle renvoie 0
 
-Lorsque le conteneur démarre, il exécute cette commande:
+Vérifier le status du pod:
 ```bash
-$ /bin/sh -c "touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600"
+$ kubectl describe po simplepod6
+$ tail -f /var/log/message | grep -i simplepod6
 ```
+
+Ajouter les options suivantes:
+ - timeoutSeconds: Nombre de secondes après lequel la sonde arrive à expiration (Valeur minimal par défaut "1sce").
+ - successThreshold: Succès consécutifs minimum pour que la sonde soit considérée comme ayant réussi après avoir échoué. La valeur minimal par défaut est 1 (doit être 1 pour la vivacité).
+ - failureThreshold: Quand un pod démarre et que la sonde échoue, Kubernetes essaiera le seuil d'échec avant d'abandonner. Abandonner en cas d’analyse signifie relancer le pod. En cas de test de disponibilité, le pod sera marqué comme étant non prêt. La valeur par défaut est 3. La valeur minimale est 1.
+
+
 
 2/ Définir une sonde d'activité qui utilise une requête HTTPGET:
 ```yaml
