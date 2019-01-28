@@ -750,6 +750,7 @@ Ajouter les options suivantes:
 2/ Définir un nouveau pod avec une sonde d'activité qui utilise une requête HTTPGET:
 ```yaml
 apiVersion: v1
+apiVersion: v1
 kind: Pod
 metadata:
   name: simplepod7
@@ -758,15 +759,16 @@ spec:
   containers:
   - name: container7
     image: nginx
+    imagePullPolicy: Always
     #command: 
     #args: 
     livenessProbe:
       httpGet:
-        path: /usr/share/nginx/html/index.html
-      port: 80
-      httpHeaders:
-      - name: X-Custom-Header
-        value: Awesome
+        #path: /usr/share/nginx/html/index.html
+        port: 80
+        #httpHeaders:
+        #- name: X-Custom-Header
+        #  value: Awesome
       initialDelaySeconds: 10
       periodSeconds: 5
 ```
