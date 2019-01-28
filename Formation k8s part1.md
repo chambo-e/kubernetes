@@ -814,6 +814,8 @@ spec:
 - Tout comme la sonde de disponibilité, il tente de se connecter au conteneur goproxy sur le port 8080. 
 - Si la sonde d'activité échoue, le conteneur sera redémarré.
 
+
+
 4/ Utiliser un port nommé:
 Utiliser un ContainerPort nommé pour les contrôles d'activité HTTP ou TCP:
 ```yaml
@@ -831,6 +833,8 @@ livenessProbe:
 Voir: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
 
 
+
+
 ---------------------------------------------------------------------------------------------------------------
 ##  volumes
 ---------------------------------------------------------------------------------------------------------------
@@ -843,31 +847,36 @@ $ kubectl get storageclass
 
 2/ Définir un volume emptyDir dans le Pod et le monter dans le container avec une limite.
 ```yaml
-limite: 
-	spec:
-	 volumes:
-	 -name: monvolume
-	   emptyDir(): {}
-	 containers:
-	 ...
-	  volumeMounts:
-	  -name: monvolume
-	   mountPath: /mnt/volume
-          ressources:
-           limits:
-            memory: "200Mi"
-            ephemeral-storage: 2GiB
-           requests: 
-            ephemeral-storage: 1GiB
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simplepod9
+  namespace: tst
+spec:
+  containers:
+  - image: nginx
+    name: container9
+    volumeMounts:
+    - mountPath: /myvolume
+      name: monvolume
+    #ressources:
+      #limits:
+      #memory: "200Mi"
+      #ephemeral-storage: 2GiB
+      #requests: 
+      #ephemeral-storage: 1GiB
+  volumes:
+  - name: monvolume
+    emptyDir: {}
 ```
-
+   
 3/ Créer le Pod puis dans un autre terminal, lancer un shell sur le conteneur:
 ```bash
-$ kubectl exec -it container1 -- /bin/bash
+$ kubectl exec -it simplepod9 -- /bin/bash
 ```
 
 4/ Dans le terminal d'origine, surveillez les modifications apportées
-
+$ find / -name myvolume
 
 ### PV & PVC:
 1/ Créer un "PersistentVolume"
