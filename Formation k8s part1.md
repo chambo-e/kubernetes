@@ -726,7 +726,7 @@ spec:
       initialDelaySeconds: 10
       periodSeconds: 5
 ```
-- periodSeconds: spécifie que kubelet doit effectuer une sonde d'activité toutes les 5 secondes (La valeur minimale est 1).
+- periodSeconds: spécifie que kubelet doit effectuer une sonde d'activité (cat /tmp/tst) toutes les 5 secondes (La valeur minimale est 1).
 - initialDelaySeconds: indique a kubelet qu'il doit attendre 10 secondes avant d'effectuer la première sonde. 
 - command: kubelet exécute la commande "cat /tmp/test" dans le conteneur.  Si la commande réussit, elle renvoie 0
 
@@ -735,7 +735,11 @@ Vérifier le status du pod:
 $ kubectl describe po simplepod6
 $ tail -f /var/log/message | grep -i simplepod6
 ```
+*kubelet tue le conteneur et il est soumis à sa politique de redémarrage. La sortie "kubectl get" montre que RESTARTS a été incrémenté:
 
+
+ 
+ 
 Ajouter les options suivantes:
  - timeoutSeconds: Nombre de secondes après lequel la sonde arrive à expiration (Valeur minimal par défaut "1sce").
  - successThreshold: Succès consécutifs minimum pour que la sonde soit considérée comme ayant réussi après avoir échoué. La valeur minimal par défaut est 1 (doit être 1 pour la vivacité).
@@ -743,20 +747,28 @@ Ajouter les options suivantes:
 
 
 
-2/ Définir une sonde d'activité qui utilise une requête HTTPGET:
+2/ Définir un nouveau pod avec une sonde d'activité qui utilise une requête HTTPGET:
 ```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simplepod7
+  namespace: tst
 spec:
   containers:
-  ...
+  - name: container7
+    image: nginx
+    #command: 
+    #args: 
     livenessProbe:
-	  httpGet:
-	    path: /monsite
-		port: 8080
-		httpHeaders:
-		- name: X-Custom-Header
-		  value: Awesome
-	     initialDelaySeconds: 3
-	     periodSeconds: 3
+      httpGet:
+        path: /usr/share/nginx/html/index.html
+      port: 80
+      httpHeaders:
+      - name: X-Custom-Header
+        value: Awesome
+      initialDelaySeconds: 10
+      periodSeconds: 5
 ```
 Les sondes HTTP ont des champs supplémentaires qui peuvent être définis :
 - host : nom d'hôte auquel se connecter, par défaut l'adresse IP du pod. 
