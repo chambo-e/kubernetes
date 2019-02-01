@@ -407,6 +407,7 @@ spec:
       cpu: "0.5"
 ```
 
+
 2/ Création du Pod à partir du manifest:
 ```bash
 $ kubectl create -f simplepod1.yaml --record --namespace=tst
