@@ -1197,81 +1197,6 @@ spec:
 ```
 
 
----------------------------------------------------------------------------------------------------------------
-## SERVICES
----------------------------------------------------------------------------------------------------------------
-1/ créer un service:
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-   name: Name_Service
-spec:
-   selector:
-      application: "My Application"  (*falcultatif)
-   ports:
-   - port: 8080
-   targetPort: 31999
-```
-*Dans cet exemple, nous avons un sélecteur; Pour transférer le trafic, nous devons donc créer manuellement un noeud final.
-
-2/ créer un EndPoint qui acheminera le trafic vers le noeud final défini comme "192.168.168.40:8080".
-```yaml
-apiVersion: v1
-kind: Endpoints
-metadata:
-   name: Tutorial_point_service
-subnets:
-   address:
-      "ip": "192.168.168.40" -------------------> (Selector)
-   ports:
-      - port: 8080
-```
-
-3/ Créer un service multi-ports:
-```yaml
-piVersion: v1
-kind: Service
-metadata:
-   name: Tutorial_point_service
-spec:
-   selector:
-      application: “My Application”
-   ClusterIP: 10.3.0.12
-   ports:
-      -name: http
-      protocol: TCP
-      port: 80
-      targetPort: 31999
-   -name:https
-      Protocol: TCP
-      Port: 443
-      targetPort: 31998
-```      
-*CLUSTERIP: aide à limiter le service au sein du cluster. Il expose le service au sein du cluster Kubernetes défini.      
-      
-      
-4/ Créer un service complet avec le type de service NodePort: 
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-   name: appname
-   labels:
-      k8s-app: appname
-spec:
-   type: NodePort
-   ports:
-   - port: 8080
-      nodePort: 31999
-      name: omninginx
-   selector:
-      k8s-app: appname
-      component: nginx
-      env: env_name
-```   
-
-
 
 ---------------------------------------------------------------------------------------------------------------
 ##Controller
@@ -1347,6 +1272,82 @@ template:
 ```bash
 $ kubctl get rs
 ```   
+
+
+---------------------------------------------------------------------------------------------------------------
+## SERVICES
+---------------------------------------------------------------------------------------------------------------
+1/ créer un service:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+   name: Name_Service
+spec:
+   selector:
+      application: "My Application"  (*falcultatif)
+   ports:
+   - port: 8080
+   targetPort: 31999
+```
+*Dans cet exemple, nous avons un sélecteur; Pour transférer le trafic, nous devons donc créer manuellement un noeud final.
+
+2/ créer un EndPoint qui acheminera le trafic vers le noeud final défini comme "192.168.168.40:8080".
+```yaml
+apiVersion: v1
+kind: Endpoints
+metadata:
+   name: Tutorial_point_service
+subnets:
+   address:
+      "ip": "192.168.168.40" -------------------> (Selector)
+   ports:
+      - port: 8080
+```
+
+3/ Créer un service multi-ports:
+```yaml
+piVersion: v1
+kind: Service
+metadata:
+   name: Tutorial_point_service
+spec:
+   selector:
+      application: “My Application”
+   ClusterIP: 10.3.0.12
+   ports:
+      -name: http
+      protocol: TCP
+      port: 80
+      targetPort: 31999
+   -name:https
+      Protocol: TCP
+      Port: 443
+      targetPort: 31998
+```      
+*CLUSTERIP: aide à limiter le service au sein du cluster. Il expose le service au sein du cluster Kubernetes défini.      
+      
+      
+4/ Créer un service complet avec le type de service NodePort: 
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+   name: appname
+   labels:
+      k8s-app: appname
+spec:
+   type: NodePort
+   ports:
+   - port: 8080
+      nodePort: 31999
+      name: omninginx
+   selector:
+      k8s-app: appname
+      component: nginx
+      env: env_name
+```   
+
 
 
 ---------------------------------------------------------------------------------------------------------------
