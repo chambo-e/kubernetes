@@ -1199,70 +1199,50 @@ spec:
 
 
 ---------------------------------------------------------------------------------------------------------------
-##Controller
+##ReplicaSet
 ---------------------------------------------------------------------------------------------------------------
+La principale différence entre le RéplicaSet et le Replication Controller est que le Replication Controller ne prend en charge que le sélecteur equality-based, alors que le jeu de réplicas prend en charge le sélecteur set-based selector.
 
-###Replication Controller
-Avant que le déploiement et ReplicaSet soient ajoutés à Kubernetes, les applications répliquées étaient configurées à l'aide d'un ReplicationController.
-
-1/ définiser un type Replication Controller ontrôleur:
-```yaml
-apiVersion: v1
-kind: ReplicationController 
-metadata:
-   name: Name-ReplicationController
-spec:
-   replicas: 3 
-   template:
-      metadata:
-         name: Name-ReplicationController
-      labels:
-         app: App
-         component: neo4j
-      spec:
-         containers:
-         - name: Nmae_Cntainer
-         image: tomcat: 8.0
-         ports:
-            - containerPort: 7474 
-```  
-
-2/ Afficher les détails du contrôleur de réplication.:
-```bash
-$ kubectl get rc
-```   
-Voir comment effectuer une mise à jour progressive à l'aide d'un contrôleur de réplication:
-https://kubernetes.io/docs/tasks/run-application/rolling-update-replication-controller/
-
-
-
-###ReplicaSet
-
-La principale différence entre le réplica Set et le Replication Controller est que le Replication Controller ne prend en charge que le sélecteur equality-based, alors que le jeu de réplicas prend en charge le sélecteur set-based selector.
-
+1/ Créer un ReplicaSet:
 ```yaml
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
-  name: MyReplicaSet
+  name: frontend
+  labels:
+    app: guestbook
+    tier: frontend
 spec:
+  # modify replicas according to your case
   replicas: 3
   selector:
-    matchLables:
-      tier: Backend
-    matchExpression:
-      - { key: tier, operation: In, values: [Backend]}
+    matchLabels:
+      tier: frontend
+    matchExpressions:
+      - {key: tier, operator: In, values: [frontend]}
   template:
     metadata:
-      lables:
-        app: Tomcat-ReplicaSet
-        tier: Backend
+      labels:
+        app: guestbook
+        tier: frontend
     spec:
       containers:
-      - name: Tomcat
-        image: tomcat: 8.0
-      ports:
-      - containerPort: 7474
+      - name: php-redis
+        image: gcr.io/google_samples/gb-frontend:v3
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        env:
+        - name: GET_HOSTS_FROM
+          value: dns
+          # If your cluster config does not include a dns service, then to
+          # instead access environment variables to find service host
+          # info, comment out the 'value: dns' line above, and uncomment the
+          # line below.
+          # value: env
+        ports:
+        - containerPort: 80
  ```  
 *un modèle de pod dans un ReplicaSet doit spécifier les labels appropriées et une stratégie de redémarrage (la seule valeur autorisée est Always).
 * Un ReplicaSet gère tous les pods avec des labels correspondant au sélecteur. Il ne fait pas la distinction entre les pods créés ou supprimés et les pods créés ou supprimés par une autre personne ou un autre processus. Cela permet de remplacer le ReplicaSet sans affecter les pods en cours d'exécution.
@@ -1273,7 +1253,49 @@ spec:
 2/ Afficher les détails du ReplicaSet:
 ```bash
 $ kubectl describe rs/MyReplicaSet
+$ kubectl describe rs frontend
 ```   
+
+3/ Supprimer le ReplicaSet avec tous ces Pods:
+```bash
+$ kubectl delete rs frontend
+```   
+
+4/ Supprimer juste un ReplicaSet sans affecter aucun de ses pods:
+```bash
+$ kubectl delete rs frontend --cascade=false
+```
+
+5/ Isoler les pods d'un ReplicaSet:
+Les pods peuvent être supprimés d'un ReplicaSet en modifiant leurs étiquettes.Les pods ainsi supprimés seront automatiquement remplacés (en supposant que le nombre de réplicas ne soit pas également modifié).
+
+
+6/ Scaling d'un ReplicaSet:
+Mettre à jour le champ .spec.replicas. Le contrôleur ReplicaSet s'assure qu'un nombre souhaité de pods avec un sélecteur correspondant au Labels sont disponibles et opérationnels.
+
+
+7/ Créer le HPA défini qui met automatiquement à l'échelle le ReplicaSet cible en fonction de l'utilisation du processeur par les pods répliqués. Un ReplicaSet peut être Auto-Scaled par un HPA. 
+
+```yaml
+apiVersion:   autoscaling/v1 
+  kind:   HorizontalPodAutoscaler 
+  metadata: 
+    name:   frontend-scaler 
+  spec: 
+    scaleTargetRef: 
+      kind:   ReplicaSet 
+      name:   frontend 
+    minReplicas:   3 
+    maxReplicas:   10 
+    targetCPUUtilizationPercentage:   50
+```
+
+Ou, utiliser la commande kubectl autoscale pour accomplir la même chose 
+```bash
+kubectl autoscale rs frontend --max=10
+```
+
+
 
 
 ---------------------------------------------------------------------------------------------------------------
