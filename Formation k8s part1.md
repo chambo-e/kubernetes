@@ -121,7 +121,6 @@ $ kubectl api-versions
 ```bash
  $ kubectl cluster-info 
  *L’URL indique que kubectl est correctement configuré pour accéder au cluster (Apiserver)
- $ kubectl get nodes
  ```
 Dans le cas contraire, vérifiez que celui-ci est correctement configuré:
 Affiche les informations pertinentes concernant le cluster pour le débogage et le diagnostic.
@@ -1230,7 +1229,7 @@ spec:
 
 2/ Afficher les détails du contrôleur de réplication.:
 ```bash
-$ kubctl get rc
+$ kubectl get rc
 ```   
 Voir comment effectuer une mise à jour progressive à l'aide d'un contrôleur de réplication:
 https://kubernetes.io/docs/tasks/run-application/rolling-update-replication-controller/
@@ -1242,36 +1241,38 @@ https://kubernetes.io/docs/tasks/run-application/rolling-update-replication-cont
 La principale différence entre le réplica Set et le Replication Controller est que le Replication Controller ne prend en charge que le sélecteur equality-based, alors que le jeu de réplicas prend en charge le sélecteur set-based selector.
 
 ```yaml
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
-   name: Tomcat-ReplicaSet
+  name: MyReplicaSet
 spec:
-   replicas: 3
-   selector:
-      matchLables:
-         tier: Backend
-      matchExpression:
-{ key: tier, operation: In, values: [Backend]}
-template:
-   metadata:
-      lables:
-         app: Tomcat-ReplicaSet
-         tier: Backend
-      labels:
-         app: App
-         component: neo4j
-   spec:
-      containers:
+  replicas: 3
+  selector:
+    matchLables:
+      tier: Backend
+    matchExpression:
+      - { key: tier, operation: In, values: [Backend]}
+  template:
+    metadata:
+      lables:
+        app: Tomcat-ReplicaSet
+        tier: Backend
+    spec:
+      containers:
       - name: Tomcat
-      image: tomcat: 8.0
+        image: tomcat: 8.0
       ports:
       - containerPort: 7474
  ```  
- 
+*un modèle de pod dans un ReplicaSet doit spécifier les labels appropriées et une stratégie de redémarrage (la seule valeur autorisée est Always).
+* Un ReplicaSet gère tous les pods avec des labels correspondant au sélecteur. Il ne fait pas la distinction entre les pods créés ou supprimés et les pods créés ou supprimés par une autre personne ou un autre processus. Cela permet de remplacer le ReplicaSet sans affecter les pods en cours d'exécution.
+*vous ne devez pas créer de pod dont les labels correspondent à ce sélecteur, ni directement, ni avec un autre ReplicaSet, ni avec un autre contrôleur, tel qu'un déploiement. Si vous le faites, le ReplicaSet pense avoir créé les autres pods. Kubernetes ne vous empêche pas de le faire.
+* Pour les Labels, veillez à ne pas les chevaucher avec d'autres contrôleurs.
+
+
 2/ Afficher les détails du ReplicaSet:
 ```bash
-$ kubctl get rs
+$ kubectl describe rs/MyReplicaSet
 ```   
 
 
