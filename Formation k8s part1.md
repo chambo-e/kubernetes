@@ -1301,6 +1301,7 @@ kubectl autoscale rs frontend --max=10
 ---------------------------------------------------------------------------------------------------------------
 ## SERVICES
 ---------------------------------------------------------------------------------------------------------------
+
 1/ créer un service:
 ```yaml
 apiVersion: v1
@@ -1377,7 +1378,7 @@ spec:
 ---------------------------------------------------------------------------------------------------------------
 ##Controller Deployment
 ---------------------------------------------------------------------------------------------------------------
-La méthode préférée pour créer une application répliquée consiste à utiliser un déploiement, qui à son tour utilise un ReplicaSet.
+La méthode préférée pour créer une application répliquée consiste à utiliser un déploiement, qui à son tour utilise un ReplicaSet. Le Deployment est un objet API de niveau supérieur qui met à jour ses ReplicaSets sous-jacents et leurs Pods de la même manière que kubectl rolling-update .
 
 1/ Exécuter une application à l'aide d'un objet Kubernetes Deployment.
 ```yaml
