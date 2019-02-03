@@ -1233,49 +1233,34 @@ spec:
 ---------------------------------------------------------------------------------------------------------------
 ##ReplicaSet
 ---------------------------------------------------------------------------------------------------------------
+Controller est un ensemble d’API permettant d’organiser et de gérer des pods ou des nœuds. Dans ces expériences, nous utilisons ReplicaSet pour déployer notre conteneur. Un ReplicaSet conserve un nombre spécifique de réplicas de pod en cours d'exécution en même temps. Cela signifie que ReplicaSet surveillera les statuts de ces répliques de pod et créera de nouvelles répliques de pod pour remplacer les répliques d'origine lorsqu'elles échouent ou sont perdues. 
+
 La principale différence entre le RéplicaSet et le Replication Controller est que le Replication Controller ne prend en charge que le sélecteur equality-based, alors que le jeu de réplicas prend en charge le sélecteur set-based selector.
 
 1/ Créer un ReplicaSet:
 ```yaml
-apiVersion: apps/v1
+apiVersion: apps/v1beta2
 kind: ReplicaSet
 metadata:
-  name: frontend
-  labels:
-    app: guestbook
-    tier: frontend
+  name: myrps
 spec:
-  # modify replicas according to your case
-  replicas: 3
-  selector:
+  replicas: 3  #nombre de répliques conservées dans notre ReplicaSet
+  selector:  #choisi les pods spécifiques à utiliser dans notre ReplicaSet.
     matchLabels:
-      tier: frontend
-    matchExpressions:
-      - {key: tier, operator: In, values: [frontend]}
-  template:
+      app: nginx-replicaset
+  template: # la configuration spécifique pour les pods dans ReplicaSet
     metadata:
       labels:
-        app: guestbook
-        tier: frontend
+        app: nginx-replicaset
     spec:
-      containers:
-      - name: php-redis
-        image: gcr.io/google_samples/gb-frontend:v3
-        resources:
-          requests:
-            cpu: 100m
-            memory: 100Mi
-        env:
-        - name: GET_HOSTS_FROM
-          value: dns
-          # If your cluster config does not include a dns service, then to
-          # instead access environment variables to find service host
-          # info, comment out the 'value: dns' line above, and uncomment the
-          # line below.
-          # value: env
-        ports:
+      containers:  #règles d’exécution des conteneurs Docker dans des pods
+      - name: myrps #nom de notre ReplicaSet
+        image: nginx  #nom de l'image Docker
+        imagePullPolicy: IfNotPresent # valeur par défaut est IfNotPresent, ce qui oblige les kubernetes à extraire une image si elle n'existe pas
+        ports: #: spécifie le port utilisé par le conteneur
         - containerPort: 80
  ```  
+ 
 *un modèle de pod dans un ReplicaSet doit spécifier les labels appropriées et une stratégie de redémarrage (la seule valeur autorisée est Always).
 * Un ReplicaSet gère tous les pods avec des labels correspondant au sélecteur. Il ne fait pas la distinction entre les pods créés ou supprimés et les pods créés ou supprimés par une autre personne ou un autre processus. Cela permet de remplacer le ReplicaSet sans affecter les pods en cours d'exécution.
 *vous ne devez pas créer de pod dont les labels correspondent à ce sélecteur, ni directement, ni avec un autre ReplicaSet, ni avec un autre contrôleur, tel qu'un déploiement. Si vous le faites, le ReplicaSet pense avoir créé les autres pods. Kubernetes ne vous empêche pas de le faire.
