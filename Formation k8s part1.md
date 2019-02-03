@@ -306,6 +306,7 @@ Voir: https://kubernetes.io/docs/tools/kompose/user-guide/
 ---------------------------------------------------------------------------------------------------------------
 ## NAMESPACE:
 ---------------------------------------------------------------------------------------------------------------
+
 1/ Lister tous les namespaces:
 ```bash
 $ kubectl get namespaces
@@ -404,6 +405,10 @@ voir : https://kubernetes.io/docs/concepts/policy/resource-quotas/
 ---------------------------------------------------------------------------------------------------------------
 ## Les Pods
 ---------------------------------------------------------------------------------------------------------------
+Traditionnellement, les espaces de noms et les groupes de contrôle servent à isoler les conteneurs Docker s'exécutant sur le même ordinateur. Dans Kubernetes, les conteneurs s'exécutant dans un pod partagent ces «facettes de l'isolement»,cela se traduit par la capacité des conteneurs d'un pod à communiquer via localhost. De plus, les conteneurs co-localisés dans un même pod peuvent également utiliser d'autres formes de communication interprocessus (sémaphores SystemV, mémoire partagée POSIX, etc.).
+
+Pour créer une pile réseau partagée entre les deux conteneurs, Kubernetes utilise Docker pour permettre aux conteneurs de se connecter à une interface réseau existante. Les pods contiennent également des règles de transfert permettant à nos conteneurs, via l’interface de réseau virtuel cni0, d’envoyer et de recevoir des communications réseau. Ces règles de transfert permettent de diriger ou de recevoir le trafic depuis l' interface de réseau physique d'un pod 
+
 1/ Création d’un fichier manifest (YAML) pour un Pod à un container :
 ```yaml
 apiVersion: v1
