@@ -189,11 +189,17 @@ metadata.name=my-service
 metadata.namespace!=default
 status.phase=Pending
 
-
 ```bash
 $ kubectl get pods
 $ kubectl get pods --field-selector ""
 ```
+
+Vous pouvez utiliser les opérateurs = , == et != Avec des sélecteurs de champs ( = et == signifient la même chose).
+```bash
+$ kubectl get services --field-selector metadata.namespace!=default
+```
+
+voir: https://kubernetes.io/docs/concepts/overview/object-management-kubectl/overview/
 
 
 
@@ -612,6 +618,12 @@ metadata:
   annotations:
     description: my frontend
   labels:
+    app.kubernetes.io/name:   myapp 
+    app.kubernetes.io/instance:   wordpress-myapp 
+    app.kubernetes.io/version:   "5.7.21" 
+    app.kubernetes.io/component:   database 
+    app.kubernetes.io/part-of:   wordpress 
+    app.kubernetes.io/managed-by:   helm
     environment: "tst"
     tier: "frontend"
 ```
@@ -1393,6 +1405,62 @@ spec:
       env: env_name
 ```   
 
+
+Le Deployment est utilisé pour superviser les pods exécutant l'application elle-même.
+
+ apiVersion:   apps/v1 
+  kind:   Deployment 
+  metadata: 
+    labels: 
+      app.kubernetes.io/name:   wordpress 
+      app.kubernetes.io/instance:   wordpress-abcxzy 
+      app.kubernetes.io/version:   "4.9.4" 
+      app.kubernetes.io/managed-by:   helm 
+      app.kubernetes.io/component:   server 
+      app.kubernetes.io/part-of:   wordpress 
+  ...
+  
+Le Service est utilisé pour exposer l'application.
+
+ apiVersion:   v1 
+  kind:   Service 
+  metadata: 
+    labels: 
+      app.kubernetes.io/name:   wordpress 
+      app.kubernetes.io/instance:   wordpress-abcxzy 
+      app.kubernetes.io/version:   "4.9.4" 
+      app.kubernetes.io/managed-by:   helm 
+      app.kubernetes.io/component:   server 
+      app.kubernetes.io/part-of:   wordpress 
+  ...
+  
+  MySQL est exposé en tant que StatefulSet avec des métadonnées à la fois pour elle et pour l'application plus grande à laquelle il appartient:
+
+ apiVersion:   apps/v1 
+  kind:   StatefulSet 
+  metadata: 
+    labels: 
+      app.kubernetes.io/name:   mysql 
+      app.kubernetes.io/instance:   wordpress-abcxzy 
+      app.kubernetes.io/managed-by:   helm 
+      app.kubernetes.io/component:   database 
+      app.kubernetes.io/part-of:   wordpress 
+      app.kubernetes.io/version:   "5.7.21" 
+  ... 
+Le Service est utilisé pour exposer MySQL dans le cadre de WordPress:
+
+ apiVersion:   v1 
+  kind:   Service 
+  metadata: 
+    labels: 
+      app.kubernetes.io/name:   mysql 
+      app.kubernetes.io/instance:   wordpress-abcxzy 
+      app.kubernetes.io/managed-by:   helm 
+      app.kubernetes.io/component:   database 
+      app.kubernetes.io/part-of:   wordpress 
+      app.kubernetes.io/version:   "5.7.21" 
+  ... 
+Avec MySQL StatefulSet et le Service vous remarquerez que des informations sur MySQL et Wordpress, l’application plus large, sont incluses.
 
 
 ---------------------------------------------------------------------------------------------------------------
