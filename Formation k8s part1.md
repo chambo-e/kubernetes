@@ -1323,6 +1323,7 @@ kubectl autoscale rs frontend --max=10
 ---------------------------------------------------------------------------------------------------------------
 ## SERVICES
 ---------------------------------------------------------------------------------------------------------------
+Dans Kubernetes, chaque pod reçoit sa propre adresse IP. Par conséquent, la communication directe de pod à pod est possible, bien que déconseillée ou souvent utilisée dans la pratique. Par conséquent, dans Kubernetes, nous avons tendance à utiliser d'autres ressources, telles qu'un «service», pour nous aider de manière fiable à faciliter la communication entre des pods de types différents.
 
 1/ créer un service:
 ```yaml
