@@ -183,6 +183,18 @@ $ kubectl get pod/example-pod1 replicationcontroller/example-rc1
 $ kubectl get pod -f ./pod.yaml
 ```
 
+4/ Field Selectors:
+Les sélecteurs de champs vous permettent de sélectionner les ressources Kubernetes en fonction de la valeur d'un ou de plusieurs champs de ressources. Les sélecteurs de champs sont essentiellement des filtres de ressources. Par défaut, aucun sélecteur / filtre n'est appliqué, ce qui signifie que toutes les ressources du type spécifié sont sélectionnées. 
+metadata.name=my-service
+metadata.namespace!=default
+status.phase=Pending
+
+
+```bash
+$ kubectl get pods
+$ kubectl get pods --field-selector ""
+```
+
 
 
 ### Migration de commandes
@@ -328,7 +340,14 @@ $ kubectl config view | grep namespace
 ```bash
 $ kubectl delete namespace tst
 ```
-
+ 
+ 7/ voir quelles ressources Kubernetes sont et ne sont pas dans un espace de noms:
+ ```bash
+$ kubectl api-resources --namespaced=true
+$ kubectl api-resources --namespaced=false
+```
+ 
+ 
 ---------------------------------------------------------------------------------------------------------------
 ## ResourceQuota:
 ---------------------------------------------------------------------------------------------------------------
@@ -595,12 +614,13 @@ metadata:
   labels:
     environment: "tst"
     tier: "frontend"
-...
-```  
+```
+
 
 ---------------------------------------------------------------------------------------------------------------
 ## Affectation Pod
 ---------------------------------------------------------------------------------------------------------------
+
 1/ répertoriez les nodes disponibles sur le cluster:
 ```bash
 $ kubectl get nodes 
