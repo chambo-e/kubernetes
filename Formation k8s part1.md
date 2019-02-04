@@ -150,13 +150,13 @@ $ curl http://localhost:8080/
 ```
 *kubectl proxy crée un serveur proxy entre votre ordinateur et le serveur API Kubernetes. Par défaut, il n’est accessible que localement (à partir de la machine qui l’a démarré). 
 
---Info Dashboard--
+-Info Dashboard-
 Une fois le serveur proxy démarré, vous devriez pouvoir accéder à Dashboard à partir de votre navigateur. Pour accéder au point de terminaison HTTPS du tableau de bord, accédez à: 
 "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
 
 *REMARQUE: Le tableau de bord ne doit pas être exposé publiquement à l'aide de la commande kubectl proxy car elle autorise uniquement la connexion HTTP. Pour les domaines autres que localhost et 127.0.0.1 il ne sera pas possible de se connecter. Rien ne se passera après avoir cliqué sur le bouton Sign in sur la page de connexion.
 https://github.com/kubernetes/dashboard/wiki/Accessing-Dashboard---1.7.X-and-above
---
+
 
 7/ Obtenez une liste et l'URL du reverse Proxy de l'ensemble des services demarré sur le cluster:
 ```bash
