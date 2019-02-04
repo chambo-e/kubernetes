@@ -1252,9 +1252,7 @@ spec:
 ---------------------------------------------------------------------------------------------------------------
 ##ReplicaSet
 ---------------------------------------------------------------------------------------------------------------
-Controller est un ensemble d’API permettant d’organiser et de gérer des pods ou des nœuds. Dans ces expériences, nous utilisons ReplicaSet pour déployer notre conteneur. Un ReplicaSet conserve un nombre spécifique de réplicas de pod en cours d'exécution en même temps. Cela signifie que ReplicaSet surveillera les statuts de ces répliques de pod et créera de nouvelles répliques de pod pour remplacer les répliques d'origine lorsqu'elles échouent ou sont perdues. 
-
-La principale différence entre le RéplicaSet et le Replication Controller est que le Replication Controller ne prend en charge que le sélecteur equality-based, alors que le jeu de réplicas prend en charge le sélecteur set-based selector.
+Utiliser un ReplicaSet pour déployer un conteneur répliqué. . 
 
 1/ Créer un ReplicaSet:
 ```yaml
