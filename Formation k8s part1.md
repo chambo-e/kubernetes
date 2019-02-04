@@ -1178,6 +1178,10 @@ spec:
        key: password
 ```
 
+Voir aussi: activer et configurer le cryptage des données:
+https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/
+
+
 
 ---------------------------------------------------------------------------------------------------------------
 ## Security Context
