@@ -1348,23 +1348,21 @@ Si vous avez explicitement besoin d'exposer le port d'un Pod sur le nœud, envis
 Utilisez les services sans ClusterIP  pour faciliter la découverte du service lorsque vous n'avez pas besoin de l'équilibrage.
 
 
-1/ créer un service:
+1/ Service avec ou sans Selector:
 ```yaml
 apiVersion: v1
 kind: Service
 metadata:
-   name: Name_Service
+   name: My_Service
 spec:
-   selector:
-      application: "My Application"  (*falcultatif)
+   selector: # falcultatif: Contraint à créer un Endpoint pour transférer le trafic
+      application: "My Application"  
    ports:
    - port: 8080
    targetPort: 31999
 ```
 *Dans cet exemple, nous avons un sélecteur; Pour transférer le trafic, nous devons donc créer manuellement un EndPoint
-
-
-2/ créer un EndPoint qui acheminera le trafic vers le noeud final défini comme "192.168.168.40:8080".
+-créer un EndPoint qui acheminera le trafic vers le node final défini comme "192.168.168.40:8080".
 ```yaml
 apiVersion: v1
 kind: Endpoints
@@ -1377,7 +1375,7 @@ subnets:
       - port: 8080
 ```
 
-3/ Créer un service multi-ports:
+2/ Service multi-ports:
 ```yaml
 piVersion: v1
 kind: Service
@@ -1397,23 +1395,26 @@ spec:
       Port: 443
       targetPort: 31998
 ```      
-*CLUSTERIP: aide à limiter le service au sein du cluster. Il expose le service au sein du cluster Kubernetes défini.      
+*CLUSTERIP: Expose (restreindre) le service a l'interieur du cluster.       
       
       
-4/ Créer un service complet avec le type de service NodePort: 
+3/ Créer un service complet "NodePort". 
+*Un service ClusterIP, auquel ce service "NodePort" acheminera les flux est automatiquement créé. Le service est accéssible de l'extérieur à l'aide de :  NodeIP:NodePort
+
 ```yaml
 apiVersion: v1
 kind: Service
 metadata:
-   name: appname
+   name: My-service
    labels:
       k8s-app: appname
 spec:
-   type: NodePort
+   type: NodePort   #Expose le service sur un port statique du node
    ports:
    - port: 8080
       nodePort: 31999
-      name: omninginx
+      name: Name-NodePord-Service
+      #clusterIP: 10.10.10.10
    selector:
       k8s-app: appname
       component: nginx
@@ -1421,85 +1422,25 @@ spec:
 ```   
 
 
-Le Deployment est utilisé pour superviser les pods exécutant l'application elle-même.
-
- apiVersion:   apps/v1 
-  kind:   Deployment 
-  metadata: 
-    labels: 
-      app.kubernetes.io/name:   wordpress 
-      app.kubernetes.io/instance:   wordpress-abcxzy 
-      app.kubernetes.io/version:   "4.9.4" 
-      app.kubernetes.io/managed-by:   helm 
-      app.kubernetes.io/component:   server 
-      app.kubernetes.io/part-of:   wordpress 
-  ...
-  
-Le Service est utilisé pour exposer l'application.
-
- apiVersion:   v1 
-  kind:   Service 
-  metadata: 
-    labels: 
-      app.kubernetes.io/name:   wordpress 
-      app.kubernetes.io/instance:   wordpress-abcxzy 
-      app.kubernetes.io/version:   "4.9.4" 
-      app.kubernetes.io/managed-by:   helm 
-      app.kubernetes.io/component:   server 
-      app.kubernetes.io/part-of:   wordpress 
-  ...
-  
-  MySQL est exposé en tant que StatefulSet avec des métadonnées à la fois pour elle et pour l'application plus grande à laquelle il appartient:
-
- apiVersion:   apps/v1 
-  kind:   StatefulSet 
-  metadata: 
-    labels: 
-      app.kubernetes.io/name:   mysql 
-      app.kubernetes.io/instance:   wordpress-abcxzy 
-      app.kubernetes.io/managed-by:   helm 
-      app.kubernetes.io/component:   database 
-      app.kubernetes.io/part-of:   wordpress 
-      app.kubernetes.io/version:   "5.7.21" 
-  ... 
-Le Service est utilisé pour exposer MySQL dans le cadre de WordPress:
-
- apiVersion:   v1 
-  kind:   Service 
-  metadata: 
-    labels: 
-      app.kubernetes.io/name:   mysql 
-      app.kubernetes.io/instance:   wordpress-abcxzy 
-      app.kubernetes.io/managed-by:   helm 
-      app.kubernetes.io/component:   database 
-      app.kubernetes.io/part-of:   wordpress 
-      app.kubernetes.io/version:   "5.7.21" 
-  ... 
-Avec MySQL StatefulSet et le Service vous remarquerez que des informations sur MySQL et Wordpress, l’application plus large, sont incluses.
-
 
 ---------------------------------------------------------------------------------------------------------------
 ##Controller Deployment
 ---------------------------------------------------------------------------------------------------------------
-Bien que les ensembles des Controller aient toujours la capacité de gérer les pods et d’échelonner les instances de certains pods, ils ne peuvent pas effectuer de mise à jour propagée ni d’autres fonctionnalités. Au lieu de cela, cette fonctionnalité est gérée par un déploiement, qui est la ressource avec laquelle un utilisateur utilisant Kubernetes aujourd'hui interagirait probablement.
-
-La méthode préférée pour créer une application répliquée consiste à utiliser un déploiement, qui à son tour utilise un ReplicaSet. Le Deployment est un objet API de niveau supérieur qui met à jour ses ReplicaSets sous-jacents et leurs Pods de la même manière que kubectl rolling-update .
+Bien que les ensembles des Controller aient toujours la capacité de gérer les pods et d’échelonner les instances de certains pods, ils ne peuvent pas effectuer de mise à jour propagée ni d’autres fonctionnalités. La méthode pour créer une application répliquée consiste à utiliser un déploiement, qui à son tour utilise un ReplicaSet. Le Deployment est un objet API de niveau supérieur qui met à jour ses ReplicaSets sous-jacents et leurs Pods de la même manière que kubectl rolling-update .
 
 1/ Exécuter une application à l'aide d'un objet Kubernetes Deployment.
 ```yaml
 apiVersion: apps/v1 
 kind: Deployment
 metadata:
-  name: nginx-deployment
+  name: Mydeployment
 spec:
-  selector:
+  selector:  # Utilisé pour déterminer les Pods du Cluster géré par ce controller Deployment
     matchLabels:
       app: nginx
-  replicas: 2 # tells deployment to run 2 pods matching the template
-  template: # create pods using pod definition in this template
+  replicas: 2 
+  template: 
     metadata:
-      # unlike pod-nginx.yaml, the name is not included in the meta data as a unique name is
-      # generated from the deployment name
       labels:
         app: nginx
     spec:
@@ -1510,12 +1451,13 @@ spec:
         - containerPort: 80
 ```
 
+
 2/ Créez un déploiement basé sur le fichier YAML:
 ```bash
 $ kubectl apply -f https://k8s.io/docs/tasks/run-application/deployment.yaml
-```
-Creation le controller de type ‘deployment’:
+ou
 $ kubectl run Name-Pod –image=Image-registry:tag 
+```
 
 
 3/ Afficher des informations sur le déploiement:
@@ -1524,121 +1466,52 @@ $ kubctl get deployments
 $ kubectl describe deployment nginx-deployment 
 ```
 
+
 4/ Vérifier l'état du déploiement
 ```bash
 $ kubectl rollout status deployment/nginx-deployment
 ```
-
-5/ Répertoriez les modules créés par le déploiement:
-```bash
-$  kubectl get pods -l app=nginx 
-```
-
-6/ Afficher des informations sur un pod:
-```bash
-$  kubectl describe pod <pod-name> 
-```
-
-7/ Mise à jour du déploiement par l'application d'un nouveau fichier YAML. 
-```yaml
-apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
-kind: Deployment
-metadata:
-  name: nginx-deployment
-spec:
-  selector:
-    matchLabels:
-      app: nginx
-  replicas: 2
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:1.8 # Update the version of nginx from 1.7.9 to 1.8
-        ports:
-        - containerPort: 80
-```
-
-Appliquez le nouveau fichier YAML:
-```bash
-$ kubectl apply -f deployment-update.yaml 
-ou 
-$ kubectl set image deployment/Deployment tomcat=tomcat:6.0
-```
-
-8/ Regardez le déploiement créer des pods avec de nouveaux noms et supprimer les anciens pods:
-```bash
-$  kubectl get pods -l app=nginx 
-```
-
-9/ Scaling de l'application en augmentant le nombre de réplicas (Pods):
-```yaml
-apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
-kind: Deployment
-metadata:
-  name: nginx-deployment
-spec:
-  selector:
-    matchLabels:
-      app: nginx
-  replicas: 4 # Update the replicas from 2 to 4
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:1.8
-        ports:
-        - containerPort: 80
-```
-
-Appliquer les changements et vérifier les résultat:
-```bash
-kubectl apply -f deployment-scale.yaml
-$ kubectl get pods -l app=nginx
-```
-
-10/ Supprimer un déploiement:
-```bash
-$  kubectl delete deployment nginx-deployment 
-```
-
-11/ Voir comment exécuter une application avec état à instance unique à l'aide de PersistentVolume et d'un déploiement.:
-https://kubernetes.io/docs/tasks/run-application/run-single-instance-stateful-application/
-
-12/ Voir comment exécuter une application avec état répliquée à l'aide d'un contrôleur StatefulSet. L'exemple est une topologie mono-maître MySQL avec plusieurs esclaves exécutant une réplication asynchrone. Notez qu'il ne s'agit pas d'une configuration de production. 
-https://kubernetes.io/docs/tasks/run-application/run-replicated-stateful-application/
-
-
-Autre méthode:
-supposons que nous souhaitons maintenant mettre à jour les modules nginx pour utiliser l'image nginx:1.9.1:
-```bash
- $ kubectl set image deployment/nginx-deployment nginx = nginx:1.9.1 deployment "nginx-deployment" image updated 
- ```
-Alternativement, nous pouvons edit le Déploiement et changer:
-```bash
-$ kubectl edit deployment/nginx
-```
-
-Pour voir l'état du déploiement, exécutez: 
-```bash
-$ kubectl rollout status deployment/nginx-deployment
-```
-
 Revenir au déploiement précédent
 ```bash
 $ kubectl rollout undo deployment/Deployment –to-revision=2
 ```
 
-La prochaine fois que nous voulons mettre à jour ces Pods, nous avons seulement besoin de mettre à jour le template de pod de Deployment.
-voir 
 
-Utiliser un correctif de fusion stratégique pour mettre à jour un déploiement:
+5/ Mittre à jour la version d'image "1.8" utilisé par les Pods du Déployment et appliquer le nouveau fichier YAML. 
+```bash
+$ kubectl apply -f deployment-update.yaml 
+ou 
+$ kubectl set image deployment/Deployment tomcat=tomcat:6.0
+```
+Alternativement, nous pouvons edit le Déploiement et changer:
+```bash
+$ kubectl edit deployment/nginx
+```
+
+
+6/ Augmenter le "Scaling" en augmentant le nombre de réplicas (Pods) et appliquer les fichier Yaml:
+```bash
+kubectl apply -f deployment-scale.yaml
+$ kubectl get pods -l app=nginx
+ou
+$ kubectl scale deployment nginx-deployment --replicas=10 
+```
+
+7/ Supprimer un déploiement:
+```bash
+$  kubectl delete deployment nginx-deployment 
+```
+
+
+
+A Voir: 
+-comment exécuter une application avec état à instance unique à l'aide de PersistentVolume et d'un déploiement.:
+https://kubernetes.io/docs/tasks/run-application/run-single-instance-stateful-application/
+
+-comment exécuter une application avec état répliquée à l'aide d'un contrôleur StatefulSet. L'exemple est une topologie mono-maître MySQL avec plusieurs esclaves exécutant une réplication asynchrone. Notez qu'il ne s'agit pas d'une configuration de production. 
+https://kubernetes.io/docs/tasks/run-application/run-replicated-stateful-application/
+
+-Utiliser un correctif de fusion stratégique pour mettre à jour un déploiement:
 https://kubernetes.io/docs/tasks/run-application/update-api-object-kubectl-patch/
 
 
