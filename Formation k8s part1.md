@@ -1628,3 +1628,44 @@ $ kubectl logs $pods
 ```
 
 
+
+
+4/ Créer un CronJob qui exécute chaque minute un travail simple pour imprimer l'heure actuelle et ensuite dire bonjour. Toutes les modifications apportées à un travail cron, en particulier son .spec , ne seront appliquées qu'à la prochaine exécution.
+
+Créer un CronJob:
+```yaml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello
+            image: busybox
+            args:
+            - /bin/sh
+            - -c
+            - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
+```
+Vous pouvez également utiliser kubectl run pour créer un travail cron sans écrire la configuration complète:
+```bash
+$ kubectl run hello --schedule="*/1 * * * *" --restart=OnFailure --image=busybox -- /bin/sh -c "date; echo Hello from the Kubernetes cluster"
+```
+
+Vous devriez voir que "bonjour" a programmé avec succès un travail à l'heure spécifiée dans LAST-SCHEDULE .
+Afficher les CronJob:
+```bash
+$ kubectl get cronjob 
+$ kubectl get jobs –watch
+```
+
+Supprimer le CronJob:
+```bash
+$ kubectl delete cronjob hello
+```
