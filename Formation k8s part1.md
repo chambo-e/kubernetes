@@ -1253,6 +1253,7 @@ spec:
 ##ReplicaSet
 ---------------------------------------------------------------------------------------------------------------
 Utiliser un ReplicaSet pour déployer un conteneur répliqué. . 
+*L'une des fonctionnalités clés des contrôleurs de réplication comprenait la fonctionnalité de «mise à jour progressive». Cette fonctionnalité permet de mettre à jour les pods gérés par les contrôleurs de réplication avec une interruption minimale / nulle du service fourni par ces pods. Pour ce faire, les instances des anciens pods sont mises à jour une par une. Cependant, les contrôleurs de réplication ont été critiqués pour leur impératif et leur manque de flexibilité. En tant que solution, les jeux de réplicas et les déploiements ont été introduits en remplacement des contrôleurs de réplication.
 
 1/ Créer un ReplicaSet:
 ```yaml
@@ -1261,8 +1262,8 @@ kind: ReplicaSet
 metadata:
   name: myrps
 spec:
-  replicas: 3  #nombre de répliques conservées dans notre ReplicaSet
-  selector:  #choisi les pods spécifiques à utiliser dans notre ReplicaSet.
+  replicas: 3
+  selector:  #choisi les pods géré par notre ReplicaSet "Pod dont le label correspondant à ce selector". Donc un Controller peut gérer des pods qu'il n'a pas explicitement créées.
     matchLabels:
       app: nginx-replicaset
   template: # la configuration spécifique pour les pods dans ReplicaSet
@@ -1270,10 +1271,11 @@ spec:
       labels:
         app: nginx-replicaset
     spec:
-      containers:  #règles d’exécution des conteneurs Docker dans des pods
-      - name: myrps #nom de notre ReplicaSet
-        image: nginx  #nom de l'image Docker
-        imagePullPolicy: IfNotPresent # valeur par défaut est IfNotPresent, ce qui oblige les kubernetes à extraire une image si elle n'existe pas
+      containers:  #règles d’exécution des conteneurs Docker présent de les pods
+      - name: my-container 
+        image: nginx  
+        imagePullPolicy: IfNotPresent     # par défaut "IfNotPresent", oblige à extraire une image si elle n'existe pas
+	#command: ['sh', '-c', 'echo Hello Kubernetes! &amp;&amp; sleep 3600']
         ports: #: spécifie le port utilisé par le conteneur
         - containerPort: 80
  ```  
@@ -1479,6 +1481,8 @@ Avec MySQL StatefulSet et le Service vous remarquerez que des informations sur M
 ---------------------------------------------------------------------------------------------------------------
 ##Controller Deployment
 ---------------------------------------------------------------------------------------------------------------
+Bien que les ensembles des Controller aient toujours la capacité de gérer les pods et d’échelonner les instances de certains pods, ils ne peuvent pas effectuer de mise à jour propagée ni d’autres fonctionnalités. Au lieu de cela, cette fonctionnalité est gérée par un déploiement, qui est la ressource avec laquelle un utilisateur utilisant Kubernetes aujourd'hui interagirait probablement.
+
 La méthode préférée pour créer une application répliquée consiste à utiliser un déploiement, qui à son tour utilise un ReplicaSet. Le Deployment est un objet API de niveau supérieur qui met à jour ses ReplicaSets sous-jacents et leurs Pods de la même manière que kubectl rolling-update .
 
 1/ Exécuter une application à l'aide d'un objet Kubernetes Deployment.
