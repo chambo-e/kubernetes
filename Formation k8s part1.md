@@ -2071,3 +2071,344 @@ Supprimer le CronJob:
 ```bash
 $ kubectl delete cronjob hello
 ```
+
+
+
+
+---------------------------------------------------------------------------------------------------------------
+## Init Container
+---------------------------------------------------------------------------------------------------------------
+
+Configurer l'initialisation du pod:
+comment utiliser un Init Container pour initialiser un Pod avant l'exécution d'un conteneur d'application.
+créez un pod avec un conteneur d'applications et un conteneur d'initialisation. 
+Le conteneur init est exécuté avant le démarrage du conteneur d'application.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: init-demo
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: workdir
+      mountPath: /usr/share/nginx/html
+  # These containers are run during pod initialization
+  initContainers:
+  - name: install
+    image: busybox
+    command:
+    - wget
+    - "-O"
+    - "/work-dir/index.html"
+    - http://kubernetes.io
+    volumeMounts:
+    - name: workdir
+      mountPath: "/work-dir"
+  dnsPolicy: Default
+  volumes:
+  - name: workdir
+    emptyDir: {}
+```
+
+vous pouvez voir que le pod a un volume que le conteneur init et le conteneur d'application partagent.
+Le conteneur init monte le volume partagé dans le ```/usr/share/nginx/html /work-dir``` , et le conteneur d'application monte le volume partagé dans ```/usr/share/nginx/html```. 
+Le conteneur init exécute la commande suivante, puis se termine:  wget -O /work-dir/index.html http://kubernetes.io 
+Notez que le conteneur init écrit le fichier index.html dans le répertoire racine du serveur nginx.
+
+
+
+2/ Pod simple qui a deux Init Containers. Le premier attend myservice et le second attend mydb . Une fois les deux conteneurs terminés, le pod commencera.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  containers:
+  - name: myapp-container
+    image: busybox
+    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:
+  - name: init-myservice
+    image: busybox
+    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+  - name: init-mydb
+    image: busybox
+    command: ['sh', '-c', 'until nslookup mydb; do echo waiting for mydb; sleep 2; done;']
+
+
+
+
+---
+## PodPreset
+
+Injecter des informations dans des pods à l'aide d'un PodPreset:
+Vous pouvez utiliser un objet podpreset pour injecter des informations telles que des secrets, des montages de volume et des variables d'environnement, etc. dans des pods au moment de la création.
+
+Créer un préréglage de pod:
+```yaml
+apiVersion: settings.k8s.io/v1alpha1
+kind: PodPreset
+metadata:
+  name: allow-database
+spec:
+  selector:
+    matchLabels:
+      role: frontend
+  env:
+    - name: DB_PORT
+      value: "6379"
+  volumeMounts:
+    - mountPath: /cache
+      name: cache-volume
+  volumes:
+    - name: cache-volume
+      emptyDir: {}
+```
+
+Ceci est un exemple pour montrer comment une spécification de Pod est modifiée par le préréglage de Pod qui définit une variable ConfigMap pour les variables d'environnement:
+
+Spécification de pod soumise par l'utilisateur:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: website
+  labels:
+    app: website
+    role: frontend
+spec:
+  containers:
+    - name: website
+      image: nginx
+      ports:
+        - containerPort: 80
+```
+
+
+Utilisateur soumis ConfigMap :
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etcd-env-config
+data:
+  number_of_members: "1"
+  initial_cluster_state: new
+  initial_cluster_token: DUMMY_ETCD_INITIAL_CLUSTER_TOKEN
+  discovery_token: DUMMY_ETCD_DISCOVERY_TOKEN
+  discovery_url: http://etcd_discovery:2379
+  etcdctl_peers: http://etcd:2379
+  duplicate_key: FROM_CONFIG_MAP
+  REPLACE_ME: "a value"
+```
+
+Exemple de préréglage de pod:
+
+```yaml
+apiVersion: settings.k8s.io/v1alpha1
+kind: PodPreset
+metadata:
+  name: allow-database
+spec:
+  selector:
+    matchLabels:
+      role: frontend
+  env:
+    - name: DB_PORT
+      value: "6379"
+    - name: duplicate_key
+      value: FROM_ENV
+    - name: expansion
+      value: $(REPLACE_ME)
+  envFrom:
+    - configMapRef:
+        name: etcd-env-config
+  volumeMounts:
+    - mountPath: /cache
+      name: cache-volume
+    - mountPath: /etc/app/config.json
+      readOnly: true
+      name: secret-volume
+  volumes:
+    - name: cache-volume
+      emptyDir: {}
+    - name: secret-volume
+      secret:
+         secretName: config-details
+```
+
+Pod spec après admission controller:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: website
+  labels:
+    app: website
+    role: frontend
+  annotations:
+    podpreset.admission.kubernetes.io/podpreset-allow-database: "resource version"
+spec:
+  containers:
+    - name: website
+      image: nginx
+      volumeMounts:
+        - mountPath: /cache
+          name: cache-volume
+        - mountPath: /etc/app/config.json
+          readOnly: true
+          name: secret-volume
+      ports:
+        - containerPort: 80
+      env:
+        - name: DB_PORT
+          value: "6379"
+        - name: duplicate_key
+          value: FROM_ENV
+        - name: expansion
+          value: $(REPLACE_ME)
+      envFrom:
+        - configMapRef:
+            name: etcd-env-config
+  volumes:
+    - name: cache-volume
+      emptyDir: {}
+    - name: secret-volume
+      secret:
+         secretName: config-details
+```
+
+
+Suppression d'un préréglage de pod:
+```
+$ kubectl delete podpreset allow-database podpreset "allow-database" deleted 
+```
+
+
+
+
+---------------------------------------------------------------------------------------------------------------
+## ConfigMap
+---------------------------------------------------------------------------------------------------------------
+Configurer un pod pour utiliser un fichier ConfigMap:
+ConfigMaps vous permet de découpler les artefacts de configuration du contenu de l'image pour garder les applications conteneurisées portables.
+
+Exemple: La configuration dynamique de Kubelet vous permet de modifier la configuration de chaque Kubelet dans un cluster Kubernetes actif en déployant un ConfigMap et en configurant chaque nœud pour son utilisation.
+https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/
+
+
+comment créer des fichiers ConfigMaps et configurer des modules en utilisant des données stockées dans ConfigMaps.
+créer des configmaps à partir de répertoires , de fichiers ou de valeurs littérales :
+```bash
+$ kubectl create configmap <map-name> <data-source>
+```
+- map-name est le nom que vous souhaitez attribuer à ConfigMap
+- data-source est le répertoire, le fichier ou la valeur littérale dans laquelle les données doivent être dessinées.
+
+La source de données correspond à une paire clé-valeur dans ConfigMap, où
+key = le nom du fichier ou la clé que vous avez fournie sur la ligne de commande, et
+value = le contenu du fichier ou la valeur littérale que vous avez fournie sur la ligne de commande.
+Vous pouvez utiliser kubectl describe ou kubectl get pour kubectl get informations sur un ConfigMap.
+
+
+Créer des ConfigMaps à partir de répertoires ou à partir de plusieurs fichiers du même répertoire.
+```
+$ kubectl create configmap game-config --from-file=https://k8s.io/docs/tasks/configure-pod-container/configmap/kubectl
+$ kubectl describe configmaps game-config
+$ kubectl get configmaps game-config -o yaml
+```
+
+```yaml
+apiVersion: v1
+data:
+  game.properties: |
+    enemies=aliens
+    lives=3
+    enemies.cheat=true
+    enemies.cheat.level=noGoodRotten
+    secret.code.passphrase=UUDDLRLRBABAS
+    secret.code.allowed=true
+    secret.code.lives=30
+  ui.properties: |
+    color.good=purple
+    color.bad=yellow
+    allow.textmode=true
+    how.nice.to.look=fairlyNice
+kind: ConfigMap
+metadata:
+  creationTimestamp: 2016-02-18T18:52:05Z
+  name: game-config
+  namespace: default
+  resourceVersion: "516"
+  selfLink: /api/v1/namespaces/default/configmaps/game-config
+  uid: b4952dc3-d670-11e5-8cd0-68f728db1985
+```
+
+
+
+Créer des ConfigMaps à partir de fichiers:
+créer un fichier ConfigMap à partir d'un fichier individuel ou de plusieurs fichiers.
+```
+$ kubectl create configmap game-config-2 --from-file=https://k8s.io/docs/tasks/configure-pod-container/configmap/kubectl/game.properties
+```
+Vous pouvez passer l'argument --from-file plusieurs fois pour créer un fichier ConfigMap à partir de plusieurs sources de données.
+
+Utilisez l'option --from-env-file pour créer un --from-env-file ConfigMap à partir d'un fichier env, par exemple:
+```
+$ kubectl create configmap game-config-env-file --from-env-file=docs/tasks/configure-pod-container/game-env-file.properties
+```
+
+A VOIR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------
+## Handlers
+---------------------------------------------------------------------------------------------------------------
+https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/
+Attacher des gestionnaires aux événements du cycle de vie des conteneurs: (Handlers)
+Kubernetes prend en charge les événements postStart et preStop. 
+Kubernetes envoie l'événement postStart immédiatement après le démarrage d'un conteneur et envoie l'événement preStop immédiatement avant la fin du conteneur.
+créez un pod avec un conteneur. Le conteneur a des gestionnaires pour les événements postStart et preStop:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-demo
+spec:
+  containers:
+  - name: lifecycle-demo-container
+    image: nginx
+    lifecycle:
+      postStart:
+        exec:
+          command: ["/bin/sh", "-c", "echo Hello from the postStart handler > /usr/share/message"]
+      preStop:
+        exec:
+          command: ["/usr/sbin/nginx","-s","quit"]
+```
+
+vous pouvez voir que la commande postStart écrit un fichier de message dans le ```/usr/share``` du conteneur. 
+La commande preStop arrête nginx avec élégance. Ceci est utile si le conteneur est arrêté à cause d'un échec.
+Le gestionnaire postStart s'exécute de manière asynchrone par rapport au code du conteneur, mais la gestion par Kubernetes du conteneur se bloque jusqu'à la fin du gestionnaire postStart. 
+Le statut du conteneur n'est pas défini sur RUNNING tant que le gestionnaire post-démarrage n'est pas terminé.
+Kubernetes envoie uniquement l'événement preStop lorsqu'un module est terminé . Cela signifie que le hook preStop n'est pas appelé lorsque le pod est terminé .
+
+
+
+
