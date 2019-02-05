@@ -7,89 +7,80 @@ https://kubernetes.io/docs/tasks/administer-cluster/highly-available-master/
 
 
 ---------------------------------------------------------------------------------------------------------------
-## comptes de service
+## Comptes de service
 ---------------------------------------------------------------------------------------------------------------
-Configurer les comptes de service pour les pods:
-Un compte de service fournit une identité pour les processus qui 'exécutent dans un pod.
-Lorsque vous (un humain) accédez au cluster (par exemple, en utilisant ubectl ), vous êtes authentifié par l'apiserver comme un compte utilisateur particulier (actuellement, il s'agit généralement d'un admin , sauf si votre administrateur de cluster a personnalisé votre cluster). Les rocessus dans des conteneurs à l'intérieur des Pods peuvent également contacter l'apiserver. Lorsqu'ils le font, ils sont authentifiés en tant que compte de service particulier (par exemple, default ).
+Un compte de service fournit une identité pour les processus qui 'exécutent dans un pod. Lorsque un utilisateur accéde au cluster (ex: via kubectl), il est authentifié par l'Apiserver comme un "compte utilisateur" (actuellement "admin"). Les processus dans les conteneurs à l'intérieur des Pods peuvent également contacter l'Apiserver. Lorsqu'ils le font, ils sont authentifiés en tant que "compte de service" ("default").
 
-Utilisez le compte de service par défaut pour accéder au serveur API.
-Lorsque vous créez un pod, si vous ne spécifiez pas de compte de service, e compte de service default lui est automatiquement affecté dans le même espace de noms. 
-Les autorisations API d'un compte de service dépendent du plug-in d'autorisation et de la stratégie utilisée.
-
-vous pouvez désactiver les informations d'identification de l'API automounting pour un compte de service en définissant automountServiceAccountToken: false sur le compte de service:
+1/ Créer un compte de service:
+Lorsqu'un pod est créé, si vous ne spécifiez pas de compte de service, le compte de service "default" lui est automatiquement affecté dans le même NameSapce. Les autorisations API d'un compte de service dépendent du "plug-in d'autorisation" et de la "stratégie" utilisée. On peut désactiver les informations d'identification de l'API automounting pour un compte de service en définissant "automountServiceAccountToken: false" sur le compte de service.
 
 ```yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: build-robot
+  name: My-serviceAccount
 automountServiceAccountToken: false
-...
 ```
 
-vous pouvez également désactiver les informations d'identification de l'API automounting pour un pod particulier:
+On peut également désactiver les informations d'identification de l'API automounting pour un pod particulier:
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: my-pod
 spec:
-  serviceAccountName: build-robot
+  serviceAccountName: My-serviceAccount
   automountServiceAccountToken: false
-  ...
 ```
+* La spécification de pod a la "priorité" sur le compte de service si les deux spécifient la valeur automountServiceAccountToken.
 
-La spécification de pod a priorité sur le compte de service si les deux spécifient une valeur automountServiceAccountToken .
 
-Utilisez plusieurs comptes de service:
-Chaque espace de noms a une ressource de compte de service par default appelée default . 
-lister toutes les ressources de serviceAccount dans l'espace de noms avec cette commande:
-
+2/ lister toutes les ressources "serviceAccount" :
+Chaque NameSapce a un ServiceAccount par default appelée "default". 
 ```bash
   $ kubectl get serviceAccounts
 ```
 
-Vous pouvez créer des objets ServiceAccount supplémentaires comme suit:
-```bash
-$ cat > /tmp/serviceaccount.yaml <<EOF
+
+3/ Créer un objet ServiceAccount supplémentaires:
+```yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: build-robot
-EOF
-$ kubectl create -f /tmp/serviceaccount.yaml
-serviceaccount "build-robot" created
+  name: My-serviceAccount2
+```  
+```bash
+$ kubectl create -f serviceaccount2.yaml
+```
+Pour utiliser un compte de service particulié pour un pod, définissez lui le champ "spec.serviceAccountName"sur le nom du compte de service souhaitez. 
+- Le compte de service doit exister au moment de la création du module, sinon il sera rejeté.
+- Vous ne pouvez pas mettre à jour le compte de service d'un pod déjà créé.
+
+
+4/ Supprimer un objets ServiceAccount :
+```bash
+$ kubectl delete serviceaccount/My-serviceAccount2
 ```
 
-Pour utiliser un compte de service autre que celui par défaut, définissez simplement le champ spec.serviceAccountName d'un pod sur le nom du compte de service que vous souhaitez utiliser.
-Le compte de service doit exister au moment de la création du module, sinon il sera rejeté.
-Vous ne pouvez pas mettre à jour le compte de service d'un pod déjà créé.
-Vous pouvez nettoyer le compte de service de cet exemple comme ceci:
-$ kubectl delete serviceaccount/build-robot
-
-Créez manuellement un jeton d'API de compte de service:
-Supposons que nous ayons un compte de service existant nommé "build-robot" comme mentionné ci-dessus, et nous créons un nouveau secret manuellement.
-
-```bash
-$ cat > /tmp/build-robot-secret.yaml <<EOF
+5/ Créez un jeton d'API pour un ServiceAccount:
+* Créer un nouveau secret manuellement.
+```yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: build-robot-secret
+  name: Secret-My-serviceAccount
   annotations:
-    kubernetes.io/service-account.name: build-robot
+    kubernetes.io/service-account.name: My-serviceAccount
 type: kubernetes.io/service-account-token
-EOF
-$ kubectl create -f /tmp/build-robot-secret.yaml
-secret "build-robot-secret" created
 ```
 
-Vous pouvez maintenant confirmer que le nouveau secret généré contient un jeton d'API pour le compte de service "build-robot".
-Tous les jetons pour les comptes de service inexistants seront nettoyés par le contrôleur de jeton.
-
 ```bash
-$ kubectl describe secrets/build-robot-secret
+$ kubectl create -f Secret-My-serviceAccount.yaml
+```
+
+6/ Confirmer que le nouveau secret contient un jeton d'API pour le compte de service "My-serviceAccount".
+```bash
+$ kubectl describe secrets/Secret-My-serviceAccount
 ```
 
 
