@@ -4,6 +4,15 @@
 
 
 ---------------------------------------------------------------------------------------------------------------
+## Security Cluster
+---------------------------------------------------------------------------------------------------------------
+https://kubernetes.io/docs/tasks/administer-cluster/securing-a-cluster/
+https://kubernetes.io/docs/tasks/administer-cluster/highly-available-master/
+
+
+
+
+---------------------------------------------------------------------------------------------------------------
 ## Les Nodes
 ---------------------------------------------------------------------------------------------------------------
 Exemple pour la création d'un objet k8s de type node:
@@ -1580,6 +1589,66 @@ spec:
 
 Voir aussi: activer et configurer le cryptage des données:
 https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/
+
+
+
+### Utiliser les secerts avec les images
+---------------------------------------------------------------------------------------------------------------
+Pull une image d'un registre privé:
+créer un pod qui utilise un secret pour extraire une image d'un registre Docker privé ou d'un référentiel.
+
+vous devez vous authentifier auprès d'un registre afin d'extraire une image privée:
+
+```bash
+$  docker login 
+```
+
+Le processus de connexion crée ou met à jour un fichier config.json contenant un jeton d'autorisation.
+
+Créer un secret dans le cluster qui contient votre jeton d'autorisation
+Créez ce secret, en le nommant regcred :
+```bash
+$ kubectl create secret docker-registry regcred --docker-server=<your-registry-server> --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>
+```
+Vous avez correctement défini vos informations d'identification Docker dans le cluster sous la forme d'un secret appelé regcred .
+
+consulter le format Secret au format YAML:
+```bash
+$ kubectl get secret regcred --output=yaml 
+```
+La valeur du champ .dockerconfigjson est une représentation base64 de vos informations d'identification Docker.
+
+Pour comprendre ce qui se trouve dans le champ .dockerconfigjson , convertissez les données secrètes dans un format lisible:
+
+```bash
+$ kubectl get secret regcred --output="jsonpath={.data.\.dockerconfigjson}" | base64 -d
+```
+Notez que les données secrètes contiennent le jeton d'autorisation similaire à votre fichier local ```~/.docker/config.json```.
+
+
+Créer un pod qui utilise votre secret:
+Voici un fichier de configuration pour un pod qui doit avoir accès à vos informations d'identification Docker dans regcred :
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: private-reg
+spec:
+  containers:
+  - name: private-reg-container
+    image: <your-private-image>
+  imagePullSecrets:
+  - name: regcred
+```  
+remplacez <your-private-image> par le chemin d'accès à une image dans un registre privé tel que:  janedoe/jdoe-private:v1 
+Le champ imagePullSecrets du fichier de configuration spécifie que Kubernetes doit obtenir les informations d'identification d'un secret nommé regcred .
+
+Créez un pod qui utilise votre secret et vérifiez que le pod est en cours d'exécution:
+$ kubectl create -f my-private-reg-pod.yaml
+$ kubectl get pod private-reg
+
+
 
 
 
