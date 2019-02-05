@@ -597,6 +597,48 @@ $ kubectl delete --grace-period=0 --force pod simplepod1 --namespace=tst
 
 
 ---------------------------------------------------------------------------------------------------------------
+## Partage des espaces de noms de processus entre des conteneurs
+---------------------------------------------------------------------------------------------------------------
+Partage des espaces de noms de processus entre des conteneurs dans un pod:
+Lorsque le partage d'espace de noms de processus est activé, les processus d'un conteneur sont visibles par tous les autres conteneurs de ce Pod.
+Vous pouvez utiliser cette fonctionnalité pour configurer des conteneurs coopérants, tels qu'un conteneur sidecar de gestionnaire de journaux, ou pour résoudre les images de conteneur qui n'incluent pas les utilitaires de débogage comme un shell.
+préreqquis: Une porte de fonction alpha spéciale PodShareProcessNamespace doit être définie sur true sur le système: --feature-gates=PodShareProcessNamespace=true .
+
+Le partage de l'espace de nom de processus est activé à l'aide du champ ShareProcessNamespace: 
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  shareProcessNamespace: true
+  containers:
+  - name: nginx
+    image: nginx
+  - name: shell
+    image: busybox
+    securityContext:
+      capabilities:
+        add:
+        - SYS_PTRACE
+    stdin: true
+    tty: true
+```
+
+Créer le Pod et attacher  un shell
+Vous pouvez signaler les processus dans d'autres conteneurs. 
+Il est même possible d'accéder à une autre image conteneur en utilisant le lien ```/proc/$pid/root``` .
+# head /proc/8/root/etc/nginx/nginx.conf
+
+
+Les processus sont visibles pour les autres conteneurs du module. Cela inclut toutes les informations visibles dans /proc
+Les systèmes de fichiers du conteneur sont visibles par les autres conteneurs du conteneur via le lien ```/proc/$pid/root``` .
+
+
+
+
+---------------------------------------------------------------------------------------------------------------
 ## Commande (Entrypoint) et des arguments (Cmd)
 ---------------------------------------------------------------------------------------------------------------
 1/ Définir une commande (Entrypoint) et des arguments (Cmd) pour un conteneur:
