@@ -1308,7 +1308,7 @@ Les pods peuvent être supprimés d'un ReplicaSet en modifiant leurs étiquettes
 Mettre à jour le champ .spec.replicas. Le contrôleur ReplicaSet s'assure qu'un nombre souhaité de pods avec un sélecteur correspondant au Labels sont disponibles et opérationnels.
 
 
-7/ Créer le HPA défini qui met automatiquement à l'échelle le ReplicaSet cible en fonction de l'utilisation du processeur par les pods répliqués. Un ReplicaSet peut être Auto-Scaled par un HPA. 
+7/ Créer le HPA défini qui met automatiquement à l'échelle le ReplicaSet cible en fonction de l'utilisation du CPU par les pods répliqués. Un ReplicaSet peut être Auto-Scaled par un HPA. 
 
 ```yaml
 apiVersion:   autoscaling/v1 
@@ -1324,18 +1324,27 @@ apiVersion:   autoscaling/v1
     targetCPUUtilizationPercentage:   50
 ```
 
-Ou, utiliser la commande kubectl autoscale pour accomplir la même chose 
+Ou, utiliser la commande kubectl autoscale pour accomplir la même chose que le HPA (Déploiement, Replica Set, Replication Controller)
 ```bash
-kubectl autoscale rs frontend --max=10
+$ kubectl autoscale (-f FILENAME | TYPE NAME | TYPE/NAME) [--min = MINPODS] --max = MAXPODS [--cpu-percent = CPU] [flags]
+$ kubectl autoscale rs frontend --max=10
+$ kubectl autoscale deployment foo --min=2 --max=10
 ```
-
 
 
 
 ---------------------------------------------------------------------------------------------------------------
 ## SERVICES
 ---------------------------------------------------------------------------------------------------------------
-Dans Kubernetes, chaque pod reçoit sa propre adresse IP. Par conséquent, la communication directe de pod à pod est possible, bien que déconseillée ou souvent utilisée dans la pratique. Par conséquent, dans Kubernetes, nous avons tendance à utiliser d'autres ressources, telles qu'un «service», pour nous aider de manière fiable à faciliter la communication entre des pods de types différents.
+Lorsque k8s démarre un conteneur, il fournit des variables d'environnement pointant vers tous les services en cours d'exécution 
+Si un service existe, tous les conteneurs recevront les variables
+Ne spécifiez pas de hostPort pour un Pod, sauf si cela est absolument nécessaire. (Limite le nombre d'endroits où le Pod peut être planifié, car chaque hostIP < hostIP , hostPort , protocol > doit être unique)
+ Si vous ne spécifiez pas explicitement le hostIP et le protocol , k8s utilise 0.0.0.0 comme hostIP par défaut et TCP comme protocol
+Si vous avez seulement besoin d'accéder au port à des fins de débogage, vous pouvez utiliser le proxy kubectl port-forward
+Si vous avez explicitement besoin d'exposer le port d'un Pod sur le nœud, envisagez d'utiliser un service NodePort avant de recourir à hostPort .
+Évitez d'utiliser hostNetwork , pour les mêmes raisons que hostPort .
+Utilisez les services sans ClusterIP  pour faciliter la découverte du service lorsque vous n'avez pas besoin de l'équilibrage.
+
 
 1/ créer un service:
 ```yaml
@@ -1350,7 +1359,8 @@ spec:
    - port: 8080
    targetPort: 31999
 ```
-*Dans cet exemple, nous avons un sélecteur; Pour transférer le trafic, nous devons donc créer manuellement un noeud final.
+*Dans cet exemple, nous avons un sélecteur; Pour transférer le trafic, nous devons donc créer manuellement un EndPoint
+
 
 2/ créer un EndPoint qui acheminera le trafic vers le noeud final défini comme "192.168.168.40:8080".
 ```yaml
@@ -1672,18 +1682,6 @@ egress:
 
 voir: https://kubernetes.io/docs/concepts/services-networking/network-policies/
 
-
-
-
-
----------------------------------------------------------------------------------------------------------------
-##AutoScale
----------------------------------------------------------------------------------------------------------------
-Mettre à l'échelle automatiquement les pods définis tels que Déploiement, Replica Set, Replication Controller.
-```bash
-$ kubectl autoscale (-f FILENAME | TYPE NAME | TYPE/NAME) [--min = MINPODS] --max = MAXPODS [--cpu-percent = CPU] [flags]
-$ kubectl autoscale deployment foo --min=2 --max=10
-```
 
 
 ---------------------------------------------------------------------------------------------------------------
