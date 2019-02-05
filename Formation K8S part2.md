@@ -294,36 +294,7 @@ Les systèmes de fichiers du conteneur sont visibles par les autres conteneurs d
 
 
 
----------------------------------------------------------------------------------------------------------------
-## commande (Entrypoint) et des arguments (Cmd)
----------------------------------------------------------------------------------------------------------------
-Définir une commande (Entrypoint) et des arguments (Cmd) pour un conteneur:
-Pour définir une commande, incluez le champ de command dans le fichier de configuration. 
-Pour définir les arguments de la commande, incluez le champ args dans le fichier de configuration. 
-La commande et les arguments que vous définissez ne peuvent pas être modifiés après la création du Pod.
-La commande et les arguments que vous définissez dans le fichier de configuration remplacent la commande par défaut et les arguments fournis par l'image
-Si vous définissez des arguments, mais ne définissez pas de commande, la commande par défaut est utilisée avec vos nouveaux arguments.
 
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: command-demo
-  labels:
-    purpose: demonstrate-command
-spec:
-  containers:
-  - name: command-demo-container
-    image: debian
-    command: ["printenv"]
-    args: ["HOSTNAME", "KUBERNETES_PORT"]
-  restartPolicy: OnFailure
-```
-
-Pour voir la sortie de la commande exécutée dans le conteneur, affichez les journaux du Pod:
-```
-$ kubectl logs command-demo 
-```
 
 
 
