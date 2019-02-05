@@ -202,6 +202,31 @@ Notez que le conteneur init écrit le fichier index.html dans le répertoire rac
 
 
 
+2/ Pod simple qui a deux Init Containers. Le premier attend myservice et le second attend mydb . Une fois les deux conteneurs terminés, le pod commencera.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  containers:
+  - name: myapp-container
+    image: busybox
+    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:
+  - name: init-myservice
+    image: busybox
+    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+  - name: init-mydb
+    image: busybox
+    command: ['sh', '-c', 'until nslookup mydb; do echo waiting for mydb; sleep 2; done;']
+
+
+
+
+
 ---------------------------------------------------------------------------------------------------------------
 ## Handlers
 ---------------------------------------------------------------------------------------------------------------
