@@ -29,200 +29,10 @@ Information: Les noeuds Kubernetes peuvent être programmés sur Capacité. Les 
 
 
 
+
 ---------------------------------------------------------------------------------------------------------------
-## Kubectl
+## Migration de commandes
 ---------------------------------------------------------------------------------------------------------------
-### Installation Kubectl:
-
-1/ Télécharger le binaire:
-```bash
-curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
-```
-
-2/ Rendre le binaire kubectl exécutable:
-```bash
- chmod +x ./kubectl
-```
-
-3/ Déplacez le binaire dans le PATH:
-```bash
- sudo mv ./kubectl /usr/local/bin/kubectl
-```
-
-4/ Activer de l'auto-complétion en exécutant :
-```bash
-$ source <(kubectl completion bash)
-```
-
-Pour ajouter l'autocomplétion à votre profil:
-```bash
- echo "source <(kubectl completion bash)" >> ~/.bashrc 
-```
-
-5/ vérifier la version et l'aide Kubectl:
-```bash
-$ kubectl version
-$ kubectl -h
-```
-
-
-
-### Configurer Kubectl:
-Il faut configurer kubectl en local pour pouvoir interagir avec le cluster Kubernetes (IP de l'apiserver, certificats client, Token,informations d'identification utilisateur. Spécifier une option qui existe déjà fusionnera de nouveaux champs avec les valeurs existantes pour ces champs. Par défaut, la configuration de kubectl est située à ~/.kube/config.
-
-Pour modifier le fichier kubeconfig:
-```bash
-$ kubectl config -h
-$ kubectl <command> --help
-$ kubectl config –-kubeconfig <String of File name>
-```
-Pour obtenir une liste d’options globales:
-```bash
-$ kubectl options
-```
-
-1/ Définir une entrée de cluster dans Kubeconfig :
-kubectl config set-cluster NAME [--server=server] [--certificate-authority=...] [--insecure-skip-tls-verify=true] [options]
-*--insecure-skip-tls-verify=true(Désactive la vérification de certification)
-
-```bash
-$ kubectl config get-clusters
-$ kubectl config set-cluster $CLUSTER_NAME --certificate-authority=ca.pem --embed-certs=true --server=https://$MASTER_IP
-```
-Pour supprimer le cluster:
-```bash
-$ kubectl config delete-cluster <$CLUSTER_NAME>
-```
-
-2/ Définir les credentials (entrée utilisateur):
-```bash
-$ kubectl config set-credentials -h
-$ kubectl config set-credentials $USER --client-certificate=$CLI_CERT --client-key=admin-key.pem --embed-certs=true --token=$TOKEN
-ou
-$ kubectl config set-credentials default-admin --certificateauthority = ${CA_CERT} --client-key = ${ADMIN_KEY} --clientcertificate = ${ADMIN_CERT}
-```
-
-3/ Définissez le context par défaut dans Entrypoint k8s:
-```bash
-$ kubectl config get-contexts
-$ kubectl config set-context $CONTEXT_NAME --cluster=$CLUSTER_NAME --user=$USER --namespace=$namespace
-$ kubectl config use-context $CONTEXT_NAME
-$ kubectl config current-context
-
-Pour supprimer un contexte spécifié de kubeconfig:
-$ kubectl config delete-context <Context Name>
-```
-
-3/ Vérifier la configuration :
-```bash
-$ kubectl config view
-```
-
-4/ Afficher les versions d'API prises en charge sur le cluster.
-```bash
-$ kubectl api-versions
-```
-
-
-
-### Vérification l'état du cluster:
-1/ Affiche les informations du cluster. Vérifier que kubectl est correctement configuré et a accès au cluster. 
-```bash
- $ kubectl cluster-info 
- *L’URL indique que kubectl est correctement configuré pour accéder au cluster (Apiserver)
- ```
-Dans le cas contraire, vérifiez que celui-ci est correctement configuré:
-Affiche les informations pertinentes concernant le cluster pour le débogage et le diagnostic.
-```bash
- $ kubectl cluster-info dump
- $ kubectl cluster-info dump --output-directory=/path/to/cluster-state
-```
-
-2/ Vérifiez le status de chaque composant:
-```bash
-$ kubectl get cs
-$ kubectl get all --all-namespaces
-$ kubectl get pods --all-namespaces
-```
-
-5/ Obtenez des informations sur les nodes du cluster:
-```bash
-$ kubectl get nodes
-$ kubectl describe nodes
-```
-
-6/ Exécute kubectl en mode reverse-proxy et tester le serveur API et l'authentification : 
-```bash
-$ kubectl proxy
-#$ kubectl proxy --port=8080 &
-$ curl http://localhost:8080/
-```
-*kubectl proxy crée un serveur proxy entre votre ordinateur et le serveur API Kubernetes. Par défaut, il n’est accessible que localement (à partir de la machine qui l’a démarré). 
-
--Info Dashboard-
-Une fois le serveur proxy démarré, vous devriez pouvoir accéder à Dashboard à partir de votre navigateur. Pour accéder au point de terminaison HTTPS du tableau de bord, accédez à: 
-"http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
-
-*REMARQUE: Le tableau de bord ne doit pas être exposé publiquement à l'aide de la commande kubectl proxy car elle autorise uniquement la connexion HTTP. Pour les domaines autres que localhost et 127.0.0.1 il ne sera pas possible de se connecter. Rien ne se passera après avoir cliqué sur le bouton Sign in sur la page de connexion.
-https://github.com/kubernetes/dashboard/wiki/Accessing-Dashboard---1.7.X-and-above
-
-
-7/ Obtenez une liste et l'URL du reverse Proxy de l'ensemble des services demarré sur le cluster:
-```bash
-$ kubectl get all
-$ kubectl get services --namespace=kube-system 
-```
-
-8/ Baculer un node en mode maintenance ou normal:
-```bash
-$ kubectl drain $NODENAME
-$ kubectl uncordon $NODENAME
-```
-Pour vider en toute sécurité un node tout en respectant les SLO d'applicationVoir: 
-https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/
-
-
-
-
-### Utiliser Kubectl:
-Lorsque d'une opération sur plusieurs ressources, on peut spécifier chaque ressource par type d'objet et nom ou spécifier un ou plusieurs fichiers:
-
-1/ spécifier des ressources du même type:
-```bash
-$ kubectl get pod example-pod1 example-pod2
-```
-
-2/ spécifier plusieurs types de ressources individuellement: 
-```bash
-$ kubectl get pod/example-pod1 replicationcontroller/example-rc1
-```
-
-3/ spécifier les ressources avec un ou plusieurs fichiers: 
-```bash
-$ kubectl get pod -f ./pod.yaml
-```
-
-4/ Field Selectors:
-Les sélecteurs de champs vous permettent de sélectionner les ressources Kubernetes en fonction de la valeur d'un ou de plusieurs champs de ressources. Les sélecteurs de champs sont essentiellement des filtres de ressources. Par défaut, aucun sélecteur / filtre n'est appliqué, ce qui signifie que toutes les ressources du type spécifié sont sélectionnées. 
-metadata.name=my-service
-metadata.namespace!=default
-status.phase=Pending
-
-```bash
-$ kubectl get pods
-$ kubectl get pods --field-selector ""
-```
-
-Vous pouvez utiliser les opérateurs = , == et != Avec des sélecteurs de champs ( = et == signifient la même chose).
-```bash
-$ kubectl get services --field-selector metadata.namespace!=default
-```
-
-voir: https://kubernetes.io/docs/concepts/overview/object-management-kubectl/overview/
-
-
-
-### Migration de commandes
 Migration des commandes impératives vers la configuration d'objet impérative:
 
 1/ Exportez l'objet live dans un fichier de configuration d'objet yaml:
@@ -237,59 +47,6 @@ $ kubectl get <kind>/<name> -o yaml --export > xxx.yaml
 $ kubectl replace -f xxx.yaml 
 ```
 
-
-
----------------------------------------------------------------------------------------------------------------
-## Manifeste Template:
----------------------------------------------------------------------------------------------------------------
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: monpod
-  namespace: namespace1
-  annotations:
-    description: my frontend
-  labels:
-    environment: "production"
-    tier: "frontend"
-spec:
-  restartPolicy: Always
-  securityContext:
-    runAsUser: 1000
-    fsGroup: 2000
-  containers:
-  - name: container1
-    image: ubuntu
-    imagePullPolicy: Always
-    env:
-    -name: envname
-     value: "valenv"
-    ressources:
-     limits:
-      memory: "200Mi"
-      cpu: "1"
-      ephemeral-storage: "4Gi"
-     requests: 
-      memory: "100Mi"
-      cpu: "0.5"
-      ephemeral-storage: "2Gi"
-    securityContext:
-     allowPrivilegeEscalation: false
-    livenessProbe:
-     initialDelaySeconds: 15
-     timeoutSeconds: 1
-     httpGet:
-      path: /site
-      port: 8080
-      httpHeaders:
-      - name: X-Custom-Header
-        value: Awesome
-    command: ['sh','-c','echo Hello onepoint! && sleep ]
-    #args: -cpus "2"
-    
-    *Args:-cpus "2" dit au conteneur d'essayer d'utiliser 2 cpus. Mais le conteneur est seulement autorisé à utiliser environ 1 CPU. 
-```
 
 
 
@@ -321,83 +78,6 @@ $ kompose --provider openshift --file docker-convert.yml convert
 Voir: https://kubernetes.io/docs/tools/kompose/user-guide/
 
 
-
----------------------------------------------------------------------------------------------------------------
-## Service Account
----------------------------------------------------------------------------------------------------------------
-Un compte de service fournit une identité pour les processus qui 'exécutent dans un pod. Lorsque un utilisateur accéde au cluster (ex: via kubectl), il est authentifié par l'Apiserver comme un "compte utilisateur" (actuellement "admin"). Les processus dans les conteneurs à l'intérieur des Pods peuvent également contacter l'Apiserver. Lorsqu'ils le font, ils sont authentifiés en tant que "compte de service" ("default").
-
-1/ Créer un compte de service:
-Lorsqu'un pod est créé, si vous ne spécifiez pas de compte de service, le compte de service "default" lui est automatiquement affecté dans le même NameSapce. Les autorisations API d'un compte de service dépendent du "plug-in d'autorisation" et de la "stratégie" utilisée. On peut désactiver les informations d'identification de l'API automounting pour un compte de service en définissant "automountServiceAccountToken: false" sur le compte de service.
-
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: My-serviceAccount
-automountServiceAccountToken: false
-```
-
-On peut également désactiver les informations d'identification de l'API automounting pour un pod particulier:
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: my-pod
-spec:
-  serviceAccountName: My-serviceAccount
-  automountServiceAccountToken: false
-```
-* La spécification de pod a la "priorité" sur le compte de service si les deux spécifient la valeur automountServiceAccountToken.
-
-
-2/ lister toutes les ressources "serviceAccount" :
-Chaque NameSapce a un ServiceAccount par default appelée "default". 
-```bash
-  $ kubectl get serviceAccounts
-```
-
-
-3/ Créer un objet ServiceAccount supplémentaires:
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: My-serviceAccount2
-```  
-```bash
-$ kubectl create -f serviceaccount2.yaml
-```
-Pour utiliser un compte de service particulié pour un pod, définissez lui le champ "spec.serviceAccountName"sur le nom du compte de service souhaitez. 
-- Le compte de service doit exister au moment de la création du module, sinon il sera rejeté.
-- Vous ne pouvez pas mettre à jour le compte de service d'un pod déjà créé.
-
-
-4/ Supprimer un objets ServiceAccount :
-```bash
-$ kubectl delete serviceaccount/My-serviceAccount2
-```
-
-5/ Créez un jeton d'API pour un ServiceAccount:
-* Créer un nouveau secret manuellement.
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: Secret-My-serviceAccount
-  annotations:
-    kubernetes.io/service-account.name: My-serviceAccount
-type: kubernetes.io/service-account-token
-```
-
-```bash
-$ kubectl create -f Secret-My-serviceAccount.yaml
-```
-
-6/ Confirmer que le nouveau secret contient un jeton d'API pour le compte de service "My-serviceAccount".
-```bash
-$ kubectl describe secrets/Secret-My-serviceAccount
-```
 
 
 
@@ -1143,7 +823,7 @@ $ kubectl get pods --output=wide
 
 
 ---------------------------------------------------------------------------------------------------------------
-## TAINTS:
+## Taints:
 ---------------------------------------------------------------------------------------------------------------
 
 1/ Ajoutez un taints à un node:
@@ -1634,7 +1314,7 @@ https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/
 
 
 
-### Utiliser les secerts avec les images
+### Utiliser les secrets avec les images
 ---------------------------------------------------------------------------------------------------------------
 Pull une image d'un registre privé:
 créer un pod qui utilise un secret pour extraire une image d'un registre Docker privé ou d'un référentiel.
@@ -1757,6 +1437,217 @@ spec:
     command: ["/bin/sh"]
     args: ["-c", "while true; do echo hello; sleep 10;done"]
 ```
+
+
+
+---------------------------------------------------------------------------------------------------------------
+## NETWORK POLICY:
+---------------------------------------------------------------------------------------------------------------
+
+$ kubectl create deployment nginx --image=nginx
+
+*Un podSelector vide sélectionne tous les pods de l'espace de noms.
+* chaque politique NetworkPolicy comprend une liste policyTypes pouvant inclure Ingress , Egress ou les deux.Si aucun type de policyTypes n'est spécifié sur un NetworkPolicy, par défaut, Ingress sera toujours défini et Egress sera défini si NetworkPolicy a des règles de sortie.
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: NetworkPolicy
+metadata:
+   name: policyfrontend
+   namespace: tst
+spec:
+   podSelector:
+      matchLabels:
+         role: backend
+  policyTypes: 
+  -   Ingress 
+  -   Egress 
+  ingress:	 
+   - from:
+      - podSelector:
+         matchLabels:
+            role: db
+   ports:
+      - protocol: TCP
+         port: 6379
+egress: 
+  -   to: 
+    -   ipBlock: 
+        cidr:   10.0.0.0/24 
+    ports: 
+    -   protocol:   TCP 
+      port:   5978
+```
+
+- La NetworkPolicy du nom de "policyfrontend", isole les pods identifiés par le label "role=frontend" dans le namespace "tst" pour le trafic entrant "Ingress" et sortant "Egress". Sur l'ensemble des pods selectionné, elle identifie ceux contenant le label "role=db" et leurs autorise les connexions entrante sur le port TCP 6379.
+
+voir: https://kubernetes.io/docs/concepts/services-networking/network-policies/
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------
+## Manifeste Template:
+---------------------------------------------------------------------------------------------------------------
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: monpod
+  namespace: namespace1
+  annotations:
+    description: my frontend
+  labels:
+    environment: "production"
+    tier: "frontend"
+spec:
+  restartPolicy: Always
+  securityContext:
+    runAsUser: 1000
+    fsGroup: 2000
+  containers:
+  - name: container1
+    image: ubuntu
+    imagePullPolicy: Always
+    env:
+    -name: envname
+     value: "valenv"
+    ressources:
+     limits:
+      memory: "200Mi"
+      cpu: "1"
+      ephemeral-storage: "4Gi"
+     requests: 
+      memory: "100Mi"
+      cpu: "0.5"
+      ephemeral-storage: "2Gi"
+    securityContext:
+     allowPrivilegeEscalation: false
+    livenessProbe:
+     initialDelaySeconds: 15
+     timeoutSeconds: 1
+     httpGet:
+      path: /site
+      port: 8080
+      httpHeaders:
+      - name: X-Custom-Header
+        value: Awesome
+    command: ['sh','-c','echo Hello onepoint! && sleep ]
+    #args: -cpus "2"
+   
+```
+
+---------------------------------------------------------------------------------------------------------------
+##JOB
+---------------------------------------------------------------------------------------------------------------
+
+1/ Creer un Job
+```yaml
+apiVersion: v1
+kind: Job   (création d’un Job de type Pod)
+metadata:
+   name: py
+   spec:
+   template:
+      metadata
+      name: py -------> 2
+      spec:
+         containers:
+            - name: py ------------------------> 3
+            image: python----------> 4
+            command: ["python", "SUCCESS"]
+            restartPocliy: Never --------> 5
+```
+∙ kind: Job → Nous avons défini le type de Job qui indiquera à kubectlt que le fichier yaml utilisé doit créer un module de type de travail.
+∙ Nom: py → C'est le nom du modèle que nous utilisons et la spécification définit le modèle.
+∙ nom: py → nous avons donné le nom py dans les spécifications de conteneur, ce qui permet d'identifier le pod qui sera créé.
+Image: python → l'image que nous allons extraire pour créer le conteneur qui s'exécutera à l'intérieur du pod.
+∙ restartPolicy: Jamais → Cette condition de redémarrage de l'image est donnée comme jamais, ce qui signifie que si le conteneur est tué ou s'il est faux, il ne redémarrera pas tout seul.
+
+
+2/ SCréer un scheduled Job
+```yaml
+apiVersion: v1
+kind: Job
+metadata:
+   name: py
+spec:
+   schedule: h/30 * * * * ? -------------------> 1
+   template:
+      metadata
+         name: py
+      spec:
+         containers:
+         - name: py
+         image: python
+         args:
+/bin/sh -------> 2
+-c
+ps –eaf ------------> 3
+restartPocliy: OnFailure
+```
+
+ - hschedule: Pour planifier l'exécution du Job toutes les 30 minutes.
+ - /bin/sh: entrer dans le conteneur avec /bin/sh
+ - ps –eaf: Exécute la commande ps -eaf sur la machine et répertorie tous les processus en cours d'exécution dans un conteneur.
+ 
+ 
+Pour lister tous les pods appartenant à un job sous une forme lisible par une machine:
+```bash
+$ pods=$(kubectl get pods --selector=job-name=pi --output=jsonpath={.items..metadata.name})
+$ echo $pods
+```
+
+L'option --output=jsonpath spécifie une expression qui récupère juste le nom de chaque pod dans la liste renvoyée.
+```bash
+$ kubectl logs $pods
+```
+
+
+
+
+4/ Créer un CronJob qui exécute chaque minute un travail simple pour imprimer l'heure actuelle et ensuite dire bonjour. Toutes les modifications apportées à un travail cron, en particulier son .spec , ne seront appliquées qu'à la prochaine exécution.
+
+Créer un CronJob:
+```yaml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello
+            image: busybox
+            args:
+            - /bin/sh
+            - -c
+            - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
+```
+Vous pouvez également utiliser kubectl run pour créer un travail cron sans écrire la configuration complète:
+```bash
+$ kubectl run hello --schedule="*/1 * * * *" --restart=OnFailure --image=busybox -- /bin/sh -c "date; echo Hello from the Kubernetes cluster"
+```
+
+Vous devriez voir que "bonjour" a programmé avec succès un travail à l'heure spécifiée dans LAST-SCHEDULE .
+Afficher les CronJob:
+```bash
+$ kubectl get cronjob 
+$ kubectl get jobs –watch
+```
+
+Supprimer le CronJob:
+```bash
+$ kubectl delete cronjob hello
+```
+
+
 
 
 
@@ -2026,500 +1917,6 @@ https://kubernetes.io/docs/tasks/run-application/run-replicated-stateful-applica
 
 -Utiliser un correctif de fusion stratégique pour mettre à jour un déploiement:
 https://kubernetes.io/docs/tasks/run-application/update-api-object-kubectl-patch/
-
-
-
----------------------------------------------------------------------------------------------------------------
-## NETWORK POLICY:
----------------------------------------------------------------------------------------------------------------
-
-$ kubectl create deployment nginx --image=nginx
-
-*Un podSelector vide sélectionne tous les pods de l'espace de noms.
-* chaque politique NetworkPolicy comprend une liste policyTypes pouvant inclure Ingress , Egress ou les deux.Si aucun type de policyTypes n'est spécifié sur un NetworkPolicy, par défaut, Ingress sera toujours défini et Egress sera défini si NetworkPolicy a des règles de sortie.
-
-```yaml
-apiVersion: extensions/v1beta1
-kind: NetworkPolicy
-metadata:
-   name: policyfrontend
-   namespace: tst
-spec:
-   podSelector:
-      matchLabels:
-         role: backend
-  policyTypes: 
-  -   Ingress 
-  -   Egress 
-  ingress:	 
-   - from:
-      - podSelector:
-         matchLabels:
-            role: db
-   ports:
-      - protocol: TCP
-         port: 6379
-egress: 
-  -   to: 
-    -   ipBlock: 
-        cidr:   10.0.0.0/24 
-    ports: 
-    -   protocol:   TCP 
-      port:   5978
-```
-
-- La NetworkPolicy du nom de "policyfrontend", isole les pods identifiés par le label "role=frontend" dans le namespace "tst" pour le trafic entrant "Ingress" et sortant "Egress". Sur l'ensemble des pods selectionné, elle identifie ceux contenant le label "role=db" et leurs autorise les connexions entrante sur le port TCP 6379.
-
-voir: https://kubernetes.io/docs/concepts/services-networking/network-policies/
-
-
-
----------------------------------------------------------------------------------------------------------------
-##JOB
----------------------------------------------------------------------------------------------------------------
-
-1/ Creer un Job
-```yaml
-apiVersion: v1
-kind: Job   (création d’un Job de type Pod)
-metadata:
-   name: py
-   spec:
-   template:
-      metadata
-      name: py -------> 2
-      spec:
-         containers:
-            - name: py ------------------------> 3
-            image: python----------> 4
-            command: ["python", "SUCCESS"]
-            restartPocliy: Never --------> 5
-```
-∙ kind: Job → Nous avons défini le type de Job qui indiquera à kubectlt que le fichier yaml utilisé doit créer un module de type de travail.
-∙ Nom: py → C'est le nom du modèle que nous utilisons et la spécification définit le modèle.
-∙ nom: py → nous avons donné le nom py dans les spécifications de conteneur, ce qui permet d'identifier le pod qui sera créé.
-Image: python → l'image que nous allons extraire pour créer le conteneur qui s'exécutera à l'intérieur du pod.
-∙ restartPolicy: Jamais → Cette condition de redémarrage de l'image est donnée comme jamais, ce qui signifie que si le conteneur est tué ou s'il est faux, il ne redémarrera pas tout seul.
-
-
-2/ SCréer un scheduled Job
-```yaml
-apiVersion: v1
-kind: Job
-metadata:
-   name: py
-spec:
-   schedule: h/30 * * * * ? -------------------> 1
-   template:
-      metadata
-         name: py
-      spec:
-         containers:
-         - name: py
-         image: python
-         args:
-/bin/sh -------> 2
--c
-ps –eaf ------------> 3
-restartPocliy: OnFailure
-```
-
- - hschedule: Pour planifier l'exécution du Job toutes les 30 minutes.
- - /bin/sh: entrer dans le conteneur avec /bin/sh
- - ps –eaf: Exécute la commande ps -eaf sur la machine et répertorie tous les processus en cours d'exécution dans un conteneur.
- 
- 
-Pour lister tous les pods appartenant à un job sous une forme lisible par une machine:
-```bash
-$ pods=$(kubectl get pods --selector=job-name=pi --output=jsonpath={.items..metadata.name})
-$ echo $pods
-```
-
-L'option --output=jsonpath spécifie une expression qui récupère juste le nom de chaque pod dans la liste renvoyée.
-```bash
-$ kubectl logs $pods
-```
-
-
-
-
-4/ Créer un CronJob qui exécute chaque minute un travail simple pour imprimer l'heure actuelle et ensuite dire bonjour. Toutes les modifications apportées à un travail cron, en particulier son .spec , ne seront appliquées qu'à la prochaine exécution.
-
-Créer un CronJob:
-```yaml
-apiVersion: batch/v1beta1
-kind: CronJob
-metadata:
-  name: hello
-spec:
-  schedule: "*/1 * * * *"
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          containers:
-          - name: hello
-            image: busybox
-            args:
-            - /bin/sh
-            - -c
-            - date; echo Hello from the Kubernetes cluster
-          restartPolicy: OnFailure
-```
-Vous pouvez également utiliser kubectl run pour créer un travail cron sans écrire la configuration complète:
-```bash
-$ kubectl run hello --schedule="*/1 * * * *" --restart=OnFailure --image=busybox -- /bin/sh -c "date; echo Hello from the Kubernetes cluster"
-```
-
-Vous devriez voir que "bonjour" a programmé avec succès un travail à l'heure spécifiée dans LAST-SCHEDULE .
-Afficher les CronJob:
-```bash
-$ kubectl get cronjob 
-$ kubectl get jobs –watch
-```
-
-Supprimer le CronJob:
-```bash
-$ kubectl delete cronjob hello
-```
-
-
-
-
----------------------------------------------------------------------------------------------------------------
-## Init Container
----------------------------------------------------------------------------------------------------------------
-
-Configurer l'initialisation du pod:
-comment utiliser un Init Container pour initialiser un Pod avant l'exécution d'un conteneur d'application.
-créez un pod avec un conteneur d'applications et un conteneur d'initialisation. 
-Le conteneur init est exécuté avant le démarrage du conteneur d'application.
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: init-demo
-spec:
-  containers:
-  - name: nginx
-    image: nginx
-    ports:
-    - containerPort: 80
-    volumeMounts:
-    - name: workdir
-      mountPath: /usr/share/nginx/html
-  # These containers are run during pod initialization
-  initContainers:
-  - name: install
-    image: busybox
-    command:
-    - wget
-    - "-O"
-    - "/work-dir/index.html"
-    - http://kubernetes.io
-    volumeMounts:
-    - name: workdir
-      mountPath: "/work-dir"
-  dnsPolicy: Default
-  volumes:
-  - name: workdir
-    emptyDir: {}
-```
-
-vous pouvez voir que le pod a un volume que le conteneur init et le conteneur d'application partagent.
-Le conteneur init monte le volume partagé dans le ```/usr/share/nginx/html /work-dir``` , et le conteneur d'application monte le volume partagé dans ```/usr/share/nginx/html```. 
-Le conteneur init exécute la commande suivante, puis se termine:  wget -O /work-dir/index.html http://kubernetes.io 
-Notez que le conteneur init écrit le fichier index.html dans le répertoire racine du serveur nginx.
-
-
-
-2/ Pod simple qui a deux Init Containers. Le premier attend myservice et le second attend mydb . Une fois les deux conteneurs terminés, le pod commencera.
-
-apiVersion: v1
-kind: Pod
-metadata:
-  name: myapp-pod
-  labels:
-    app: myapp
-spec:
-  containers:
-  - name: myapp-container
-    image: busybox
-    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
-  initContainers:
-  - name: init-myservice
-    image: busybox
-    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
-  - name: init-mydb
-    image: busybox
-    command: ['sh', '-c', 'until nslookup mydb; do echo waiting for mydb; sleep 2; done;']
-
-
-
-
----
-## PodPreset
-
-Injecter des informations dans des pods à l'aide d'un PodPreset:
-Vous pouvez utiliser un objet podpreset pour injecter des informations telles que des secrets, des montages de volume et des variables d'environnement, etc. dans des pods au moment de la création.
-
-Créer un préréglage de pod:
-```yaml
-apiVersion: settings.k8s.io/v1alpha1
-kind: PodPreset
-metadata:
-  name: allow-database
-spec:
-  selector:
-    matchLabels:
-      role: frontend
-  env:
-    - name: DB_PORT
-      value: "6379"
-  volumeMounts:
-    - mountPath: /cache
-      name: cache-volume
-  volumes:
-    - name: cache-volume
-      emptyDir: {}
-```
-
-Ceci est un exemple pour montrer comment une spécification de Pod est modifiée par le préréglage de Pod qui définit une variable ConfigMap pour les variables d'environnement:
-
-Spécification de pod soumise par l'utilisateur:
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: website
-  labels:
-    app: website
-    role: frontend
-spec:
-  containers:
-    - name: website
-      image: nginx
-      ports:
-        - containerPort: 80
-```
-
-
-Utilisateur soumis ConfigMap :
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: etcd-env-config
-data:
-  number_of_members: "1"
-  initial_cluster_state: new
-  initial_cluster_token: DUMMY_ETCD_INITIAL_CLUSTER_TOKEN
-  discovery_token: DUMMY_ETCD_DISCOVERY_TOKEN
-  discovery_url: http://etcd_discovery:2379
-  etcdctl_peers: http://etcd:2379
-  duplicate_key: FROM_CONFIG_MAP
-  REPLACE_ME: "a value"
-```
-
-Exemple de préréglage de pod:
-
-```yaml
-apiVersion: settings.k8s.io/v1alpha1
-kind: PodPreset
-metadata:
-  name: allow-database
-spec:
-  selector:
-    matchLabels:
-      role: frontend
-  env:
-    - name: DB_PORT
-      value: "6379"
-    - name: duplicate_key
-      value: FROM_ENV
-    - name: expansion
-      value: $(REPLACE_ME)
-  envFrom:
-    - configMapRef:
-        name: etcd-env-config
-  volumeMounts:
-    - mountPath: /cache
-      name: cache-volume
-    - mountPath: /etc/app/config.json
-      readOnly: true
-      name: secret-volume
-  volumes:
-    - name: cache-volume
-      emptyDir: {}
-    - name: secret-volume
-      secret:
-         secretName: config-details
-```
-
-Pod spec après admission controller:
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: website
-  labels:
-    app: website
-    role: frontend
-  annotations:
-    podpreset.admission.kubernetes.io/podpreset-allow-database: "resource version"
-spec:
-  containers:
-    - name: website
-      image: nginx
-      volumeMounts:
-        - mountPath: /cache
-          name: cache-volume
-        - mountPath: /etc/app/config.json
-          readOnly: true
-          name: secret-volume
-      ports:
-        - containerPort: 80
-      env:
-        - name: DB_PORT
-          value: "6379"
-        - name: duplicate_key
-          value: FROM_ENV
-        - name: expansion
-          value: $(REPLACE_ME)
-      envFrom:
-        - configMapRef:
-            name: etcd-env-config
-  volumes:
-    - name: cache-volume
-      emptyDir: {}
-    - name: secret-volume
-      secret:
-         secretName: config-details
-```
-
-
-Suppression d'un préréglage de pod:
-```
-$ kubectl delete podpreset allow-database podpreset "allow-database" deleted 
-```
-
-
-
-
----------------------------------------------------------------------------------------------------------------
-## ConfigMap
----------------------------------------------------------------------------------------------------------------
-Configurer un pod pour utiliser un fichier ConfigMap:
-ConfigMaps vous permet de découpler les artefacts de configuration du contenu de l'image pour garder les applications conteneurisées portables.
-
-Exemple: La configuration dynamique de Kubelet vous permet de modifier la configuration de chaque Kubelet dans un cluster Kubernetes actif en déployant un ConfigMap et en configurant chaque nœud pour son utilisation.
-https://kubernetes.io/docs/tasks/administer-cluster/reconfigure-kubelet/
-
-
-comment créer des fichiers ConfigMaps et configurer des modules en utilisant des données stockées dans ConfigMaps.
-créer des configmaps à partir de répertoires , de fichiers ou de valeurs littérales :
-```bash
-$ kubectl create configmap <map-name> <data-source>
-```
-- map-name est le nom que vous souhaitez attribuer à ConfigMap
-- data-source est le répertoire, le fichier ou la valeur littérale dans laquelle les données doivent être dessinées.
-
-La source de données correspond à une paire clé-valeur dans ConfigMap, où
-key = le nom du fichier ou la clé que vous avez fournie sur la ligne de commande, et
-value = le contenu du fichier ou la valeur littérale que vous avez fournie sur la ligne de commande.
-Vous pouvez utiliser kubectl describe ou kubectl get pour kubectl get informations sur un ConfigMap.
-
-
-Créer des ConfigMaps à partir de répertoires ou à partir de plusieurs fichiers du même répertoire.
-```
-$ kubectl create configmap game-config --from-file=https://k8s.io/docs/tasks/configure-pod-container/configmap/kubectl
-$ kubectl describe configmaps game-config
-$ kubectl get configmaps game-config -o yaml
-```
-
-```yaml
-apiVersion: v1
-data:
-  game.properties: |
-    enemies=aliens
-    lives=3
-    enemies.cheat=true
-    enemies.cheat.level=noGoodRotten
-    secret.code.passphrase=UUDDLRLRBABAS
-    secret.code.allowed=true
-    secret.code.lives=30
-  ui.properties: |
-    color.good=purple
-    color.bad=yellow
-    allow.textmode=true
-    how.nice.to.look=fairlyNice
-kind: ConfigMap
-metadata:
-  creationTimestamp: 2016-02-18T18:52:05Z
-  name: game-config
-  namespace: default
-  resourceVersion: "516"
-  selfLink: /api/v1/namespaces/default/configmaps/game-config
-  uid: b4952dc3-d670-11e5-8cd0-68f728db1985
-```
-
-
-
-Créer des ConfigMaps à partir de fichiers:
-créer un fichier ConfigMap à partir d'un fichier individuel ou de plusieurs fichiers.
-```
-$ kubectl create configmap game-config-2 --from-file=https://k8s.io/docs/tasks/configure-pod-container/configmap/kubectl/game.properties
-```
-Vous pouvez passer l'argument --from-file plusieurs fois pour créer un fichier ConfigMap à partir de plusieurs sources de données.
-
-Utilisez l'option --from-env-file pour créer un --from-env-file ConfigMap à partir d'un fichier env, par exemple:
-```
-$ kubectl create configmap game-config-env-file --from-env-file=docs/tasks/configure-pod-container/game-env-file.properties
-```
-
-A VOIR !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/
-
-
-
-
-
----------------------------------------------------------------------------------------------------------------
-## Handlers
----------------------------------------------------------------------------------------------------------------
-https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/
-Attacher des gestionnaires aux événements du cycle de vie des conteneurs: (Handlers)
-Kubernetes prend en charge les événements postStart et preStop. 
-Kubernetes envoie l'événement postStart immédiatement après le démarrage d'un conteneur et envoie l'événement preStop immédiatement avant la fin du conteneur.
-créez un pod avec un conteneur. Le conteneur a des gestionnaires pour les événements postStart et preStop:
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: lifecycle-demo
-spec:
-  containers:
-  - name: lifecycle-demo-container
-    image: nginx
-    lifecycle:
-      postStart:
-        exec:
-          command: ["/bin/sh", "-c", "echo Hello from the postStart handler > /usr/share/message"]
-      preStop:
-        exec:
-          command: ["/usr/sbin/nginx","-s","quit"]
-```
-
-vous pouvez voir que la commande postStart écrit un fichier de message dans le ```/usr/share``` du conteneur. 
-La commande preStop arrête nginx avec élégance. Ceci est utile si le conteneur est arrêté à cause d'un échec.
-Le gestionnaire postStart s'exécute de manière asynchrone par rapport au code du conteneur, mais la gestion par Kubernetes du conteneur se bloque jusqu'à la fin du gestionnaire postStart. 
-Le statut du conteneur n'est pas défini sur RUNNING tant que le gestionnaire post-démarrage n'est pas terminé.
-Kubernetes envoie uniquement l'événement preStop lorsqu'un module est terminé . Cela signifie que le hook preStop n'est pas appelé lorsque le pod est terminé .
-
 
 
 
