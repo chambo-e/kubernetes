@@ -79,24 +79,17 @@ Voir: https://kubernetes.io/docs/tools/kompose/user-guide/
 
 
 
-
-
+---------------------------------------------------------------------------------------------------------------
+## Objets:
+---------------------------------------------------------------------------------------------------------------
+$ kubectl get <type> <all> (--namespace=<>/ --all-namespaces) (--show-labels)
+	
+	
 ---------------------------------------------------------------------------------------------------------------
 ## NAMESPACE:
 ---------------------------------------------------------------------------------------------------------------
 
-1/ Lister tous les namespaces:
-```bash
-$ kubectl get namespaces
-$ kubectl get namespaces --show-labels
-```
-
-2/ Créer un namespace:
-```bash
-$ kubectl create namespace tst
-$ kubectl create –f https://github.com/dlevray/kubernetes/blob/master/TP/namespace.yaml
-      
-```
+1/ Créer un namespace:
 ```yaml  
 apiVersion: v1
 kind: Namespace
@@ -104,30 +97,28 @@ metadata:
   name: tst
 ```
 
-3/ Obtenir des informations sur un namespace:
 ```bash
+$ kubectl create –f https://github.com/dlevray/kubernetes/blob/master/TP/namespace.yaml 
+```
+
+2/ Obtenir des informations sur un namespace:
+```bash
+$ kubectl get namespaces
 $ kubectl describe namespaces tst
-$ kubectl get all --namespace=tst
-$ kubectl get <type> --namespace=tst 
 ```
 
-4/ Définir un namespace pour un objet:
-```bash
-$ kubectl --namespace=tst run nginx --image=nginx (obsolete)
-```
-
-5/ Définir le namespace par defaut pour toutes les commandes kubectl:
+3/ Définir le namespace par defaut pour toutes les commandes kubectl:
 ```bash
 $ kubectl config set-context $(kubectl config current-context) --namespace=tst
 $ kubectl config view | grep namespace
 ```
 
-6/ Supprimer un namespace :
+4/ Supprimer un namespace :
 ```bash
 $ kubectl delete namespace tst
 ```
  
- 7/ voir quelles ressources Kubernetes sont et ne sont pas dans un espace de noms:
+5/ Afficher les objets qui sont ou ne sont pas dans un NameSapce:
  ```bash
 $ kubectl api-resources --namespaced=true
 $ kubectl api-resources --namespaced=false
@@ -139,19 +130,20 @@ $ kubectl api-resources --namespaced=false
 ---------------------------------------------------------------------------------------------------------------
 1/ Créer un ResourceQuota
 ```yaml  
- apiVersion:   v1 
-  kind:   ResourceQuota 
-  metadata: 
-    name:   quota
-  spec: 
-    hard: 
-      requests.cpu:   "1" 
-      requests.memory:   1Gi 
-      limits.cpu:   "5" 
-      limits.memory:   10Gi 
+apiVersion:   v1 
+kind:   ResourceQuota 
+metadata: 
+  name:   quota
+  namespace: tst
+spec: 
+  hard: 
+    requests.cpu:   "1" 
+    requests.memory:   1Gi 
+    limits.cpu:   "5" 
+    limits.memory:   10Gi 
 ```
 ```bash
-$ kubectl create -f resourcequota.yaml --namespace=tst
+$ kubectl create -f https://github.com/dlevray/kubernetes/blob/master/TP/resourcequota.yaml
 ```
 
 2/ Afficher les ResourceQuota:
@@ -212,43 +204,34 @@ spec:
 
 2/ Création du Pod à partir du manifest:
 ```bash
-$ kubectl create -f simplepod1.yaml --record --namespace=tst
-(--record enregistre la commande en cours dans les annotations. Utile pour une révision ultérieure)
-$ kubectl describe pod simplepod1
+$ kubectl create -f https://github.com/dlevray/kubernetes/blob/master/TP/simplepod1.yaml --record
+(--record enregistre la commande en cours dans les annotations)
 ```
-*A la différences des "Multi container pod", les "Single Container Pod" peuvent être créés avec la commande kubctl run.
-```bash
-$ kubectl run tomcat --image=tomcat:8.0 (obsolete)
-```
+
 
 3/ Afficher les informations sur les Pods en cours d’execution:
 ```bash
-$ kubectl get pod --namespace=tst
-$ kubectl get pod --namespace=tst -o wide
-$ kubectl get pod simplepod1 --namespace=tst -o wide
- *(-o wide permet d'afficher le Node auquel le pod a été assigné)
- $ kubectl get pod --namespace=tst -o yaml
-$ kubectl get pod simplepod1 --namespace=tst -o yaml
- *(-o yaml "--output=yaml" spécifie d’afficher la configuration complette de l'objet)
+$ kubectl get pod simplepod1 --namespace=tst (-o wide: permet d'afficher le Node auquel le pod a été assigné)
+ $ kubectl get pod simplepod1 --namespace=tst (-o yaml: spécifie d’afficher la configuration complette de l'objet)
+ 
+ $ kubectl describe pod simplepod1 --namespace=tst
 ```
 
-4/ Voir des informations détaillées sur l'histoire et le status du Pod:
-```bash
-$  kubectl describe pod simplepod1 --namespace=tst
-```
 
-5/ Voir le résultat de la commande exécuté dans le conteneur, affichez les journaux du pod:`
+4/ Voir le résultat de la commande exécuté dans le conteneur, affichez les journaux du pod:`
 ```bash
 $ kubectl log simplepod1
 ```
 
-6/ S'attacher à un conteneur en cours d'exécution dans un Pod.
+
+5/ S'attacher à un conteneur en cours d'exécution dans un Pod.
 ```bash
 $ kubectl attach simplepod1
 $ kubectl attach simplepod1 -c container1
 ```
 
-7/ Exécuter une commande dans un conteneur:
+
+6/ Exécuter une commande dans un conteneur:
  - Récupère le résultat de l'exécution de 'date' à partir du pod "simplepod1"
 ```bash
 $ kubectl exec simplepod1 date
@@ -265,7 +248,7 @@ $ kubectl exec simplepod1 -c container1 date
 *Dans le shell, exécutez la commande "printenv" pour répertorier les variables d’environnement.
 
 
-8/ Supprimez un Pod:
+7/ Supprimez un Pod:
 ```bash
 $ kubectl delete pod simplepod1 --namespace=tst
 $ kubectl delete --grace-period=0 --force pod simplepod1 --namespace=tst
@@ -283,7 +266,7 @@ Lorsque le partage d'espace de noms de processus est activé, les processus d'un
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nginx
+  name: simplepod2
 spec:
   shareProcessNamespace: true
   containers:
@@ -299,11 +282,17 @@ spec:
     tty: true
 ```
 
-Créer le Pod et attacher  un shell
-Vous pouvez signaler les processus dans d'autres conteneurs. 
-Il est même possible d'accéder à une autre image conteneur en utilisant le lien ```/proc/$pid/root``` .
-# head /proc/8/root/etc/nginx/nginx.conf
+Créer le Pod et attacher un shell:
+```bash
+$ kubectl create -f https://github.com/dlevray/kubernetes/blob/master/TP/shareProcessNamespace.yaml
+$ kubectl exec simplepod1 -c container1 -it -- bash -il
+```
 
+Vous pouvez signaler les processus dans d'autres conteneurs. 
+Il est possible d'accéder à une autre image conteneur en utilisant le lien ```/proc/$pid/root``` .
+```bash
+# head /proc/8/root/etc/nginx/nginx.conf
+```
 
 Les processus sont visibles pour les autres conteneurs du Pod. Cela inclut toutes les informations visibles dans /proc
 Les systèmes de fichiers du conteneur sont visibles par les autres conteneurs du conteneur via le lien ```/proc/$pid/root``` .
@@ -321,24 +310,25 @@ La commande et les arguments définis ne peuvent pas être modifiés après la c
 apiVersion: v1
 kind: Pod
 metadata:
-  name: command-demo
-  labels:
-    purpose: demonstrate-command
+  name: simplepod3
 spec:
   containers:
-  - name: command-demo-container
-    image: debian
+  - name: container3
+    image: centos
     command: ["printenv"]
     args: ["HOSTNAME", "KUBERNETES_PORT"]
   restartPolicy: OnFailure
 ```
+```
+$ kubectl create -f https://github.com/dlevray/kubernetes/blob/master/TP/simplepod3.yaml
+```
 
 Pour voir la sortie de la commande exécutée dans le conteneur, affichez les journaux du Pod:
 ```
-$ kubectl logs command-demo 
+$ kubectl logs simplepod3
 ```
 
-Exécuter une commande dans un shell:
+Créer un nouveau Pod et exécuter une commande dans un shell:
 ```yaml
 command: ["/bin/sh"]
 args: ["-c", "while true; do echo hello; sleep 10;done"]
@@ -357,6 +347,7 @@ apiVersion: v1
 kind: LimitRange
 metadata:
   name: limitrange
+  namespace: tst
 spec:
   limits:
   - default:
@@ -370,7 +361,7 @@ spec:
 
 2/ Créez le LimitRange dans l'espace de noms
 ```bash
-$ kubectl create -f limitrange.yaml --namespace=tst
+$ kubectl create -f https://github.com/dlevray/kubernetes/blob/master/TP/LimitRange.yaml
 ```
 
 3/ Créer un simplepod3 sans spécifier de ressources:
