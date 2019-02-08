@@ -938,13 +938,14 @@ $ kubectl create secret generic monsecret --from-literal=username='my-app' --fro
 3/ méthode 3: Créer à partir d'un fichier yaml
 -Créer l'object secret à partir du fichier yaml:
 ```yaml
-	apiVersion: v1
-	kind: Secret
-	metadata:
-	  name: monsecret
-	data:
-	  username: admin
-	  password: azerty
+apiVersion: v1
+kind: Secret
+metadata:
+  name: monsecret
+  namespace: tst
+data:
+  username: admin
+  password: azerty
 ```
 
 ```bash
@@ -964,32 +965,31 @@ Une fois que nous avons créé les secrets, il peut être consommé dans un pod 
 
 5/ Créer un pod qui accède aux secret via un volume (tous les fichiers créés sur montage secret auront l'autorisation 0400):
 ```yaml
-	...
-	spec:
-	  containers:
-	    ...
-	    volumeMounts:
-	    - name: secret-volume
-	      mountPath: /mnt/secret-volume
-	      readOnly: true
-	  volumes:
-	    - name: secret-volume
-	      secret:
-	       secretName: monsecret
-	       defaultMode: 256
+...
+spec:
+  containers:
+    volumeMounts:
+    - name: secret-volume
+      mountPath: /mnt/secret-volume
+      readOnly: true
+  volumes:
+    - name: secret-volume
+      secret:
+        secretName: monsecret
+        defaultMode: 256
 ```
 
 6/ Spécifier un chemin particulier pour un item (/mnt/secret-volume/my-group/my-username à la place de /mnt/secret-volume/username) et spécifier des autorisations différentes pour différents fichiers (ici, la valeur d'autorisation de 0777): 
 
 ```yaml
-	volumes:
-	  - name: foo
-	    secret:
-	      secretName: mysecret
-	      items:
-	      - key: username
-		path: my-group/my-username
-		mode: 511
+volumes:
+  - name: foo
+    secret:
+      secretName: mysecret
+      items:
+      - key: username
+        path: my-group/my-username
+        mode: 511
 ```
 
 - Si spec.volumes[].secret.items est utilisé, seules les clés spécifiées dans les items sont projetées. 
