@@ -148,7 +148,7 @@ $ kubectl create -f https://github.com/dlevray/kubernetes/blob/master/TP/resourc
 
 2/ Afficher les ResourceQuota:
 ```bash
-$ kubectl get resourcequota quota --namespace=tst --output=yaml 
+$ kubectl get resourcequota quota -n tst --output=yaml 
 $ kubectl describe namespaces tst
 ```
 
@@ -165,10 +165,10 @@ spec:
 ```
 
 ```bash
-kubectl replace -f resourcequota.yaml
+kubectl replace -f https://github.com/dlevray/kubernetes/blob/master/TP/resourcequota2.yaml
 ```
 
-voir : https://kubernetes.io/docs/concepts/policy/resource-quotas/
+Voir : https://kubernetes.io/docs/concepts/policy/resource-quotas/
 
 
 
@@ -211,47 +211,47 @@ $ kubectl create -f https://github.com/dlevray/kubernetes/blob/master/TP/simplep
 
 3/ Afficher les informations sur les Pods en cours d’execution:
 ```bash
-$ kubectl get pod simplepod1 --namespace=tst (-o wide: permet d'afficher le Node auquel le pod a été assigné)
- $ kubectl get pod simplepod1 --namespace=tst (-o yaml: spécifie d’afficher la configuration complette de l'objet)
+$ kubectl get pod simplepod1 -n tst (-o wide: permet d'afficher le Node auquel le pod a été assigné)
+ $ kubectl get pod simplepod1 -n tst (-o yaml: spécifie d’afficher la configuration complette de l'objet)
  
- $ kubectl describe pod simplepod1 --namespace=tst
+ $ kubectl describe pod simplepod1 -n tst
 ```
 
 
 4/ Voir le résultat de la commande exécuté dans le conteneur, affichez les journaux du pod:`
 ```bash
-$ kubectl log simplepod1
+$ kubectl log simplepod1 -n tst
 ```
 
 
 5/ S'attacher à un conteneur en cours d'exécution dans un Pod.
 ```bash
-$ kubectl attach simplepod1
-$ kubectl attach simplepod1 -c container1
+$ kubectl attach simplepod1 -n tst
+$ kubectl attach simplepod1 -c container1 -n tst
 ```
 
 
 6/ Exécuter une commande dans un conteneur:
  - Récupère le résultat de l'exécution de 'date' à partir du pod "simplepod1"
 ```bash
-$ kubectl exec simplepod1 date
+$ kubectl exec simplepod1 date -n tst
 ```
  - Récupère le résultat de l'exécution de 'date' dans le conteneur "container1" du pod "simplepod1"
 ```bash
-$ kubectl exec simplepod1 -c container1 date
+$ kubectl exec simplepod1 -c container1 date -n tst
 ```
  - Récupérer la stdin de "container1" à partir du simplepod1 :
  ```bash
  $ kubectl exec -it simplepod1 -- /bin/bash
- $ kubectl exec simplepod1 -c container1 -it -- bash -il
+ $ kubectl exec simplepod1 -c container1 -it -- bash -il -n tst
 ```
 *Dans le shell, exécutez la commande "printenv" pour répertorier les variables d’environnement.
 
 
 7/ Supprimez un Pod:
 ```bash
-$ kubectl delete pod simplepod1 --namespace=tst
-$ kubectl delete --grace-period=0 --force pod simplepod1 --namespace=tst
+$ kubectl delete pod simplepod1 -n tst
+$ kubectl delete --grace-period=0 --force pod simplepod1 -n tst
  *(Remplacer la valeur de grace par défaut "La valeur 0 force la suppression du Pod")
 ```
 
@@ -266,7 +266,7 @@ Lorsque le partage d'espace de noms de processus est activé, les processus d'un
 apiVersion: v1
 kind: Pod
 metadata:
-  name: simplepod2
+  name: shareProcessNamespace
 spec:
   shareProcessNamespace: true
   containers:
@@ -285,7 +285,7 @@ spec:
 Créer le Pod et attacher un shell:
 ```bash
 $ kubectl create -f https://github.com/dlevray/kubernetes/blob/master/TP/shareProcessNamespace.yaml
-$ kubectl exec simplepod1 -c container1 -it -- bash -il
+$ kubectl exec shareProcessNamespace -c nginx -it -- bash -il
 ```
 
 Vous pouvez signaler les processus dans d'autres conteneurs. 
@@ -310,28 +310,41 @@ La commande et les arguments définis ne peuvent pas être modifiés après la c
 apiVersion: v1
 kind: Pod
 metadata:
-  name: simplepod3
+  name: simplepod2
 spec:
   containers:
-  - name: container3
+  - name: container2
     image: centos
     command: ["printenv"]
     args: ["HOSTNAME", "KUBERNETES_PORT"]
   restartPolicy: OnFailure
 ```
 ```
-$ kubectl create -f https://github.com/dlevray/kubernetes/blob/master/TP/simplepod3.yaml
+$ kubectl create -f https://github.com/dlevray/kubernetes/blob/master/TP/simplepod2.yaml
 ```
 
 Pour voir la sortie de la commande exécutée dans le conteneur, affichez les journaux du Pod:
 ```
-$ kubectl logs simplepod3
+$ kubectl logs simplepod2
 ```
 
 Créer un nouveau Pod et exécuter une commande dans un shell:
 ```yaml
-command: ["/bin/sh"]
-args: ["-c", "while true; do echo hello; sleep 10;done"]
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simplepod3
+spec:
+  containers:
+  - name: container3
+    image: centos
+    command: ["/bin/sh"]
+    args: ["-c", "while true; do echo hello; sleep 10;done"]
+  restartPolicy: OnFailure
+```
+
+```
+$ kubectl create -f https://github.com/dlevray/kubernetes/blob/master/TP/simplepod3.yaml
 ```
 
 
@@ -364,30 +377,30 @@ spec:
 $ kubectl create -f https://github.com/dlevray/kubernetes/blob/master/TP/LimitRange.yaml
 ```
 
-3/ Créer un simplepod3 sans spécifier de ressources:
+3/ Créer un simplepod4 sans spécifier de ressources:
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: simplepod3
+  name: simplepod4
   namespace: tst
 spec:
   restartPolicy: Always
   containers:
-  - name: container3
+  - name: container4
     image: centos
     command: ["/bin/sh"]
     args: ["-c", "while true; do echo hello; sleep 10;done"]
 ```   
 ```bash
-$ kubectl create -f limitrange.yaml --namespace=tst
+$ kubectl create -f limitrange.yaml
 ```
 
 Vérifier les ressources attribuer pour le "pod", "limirange", "ResourceQuota" et "namespace":
 ```bash
-$ kubectl describe po simplepod3
-$ kubectl describe limitrange
-$ kubectl get resourcequota quota --output=yaml 
+$ kubectl describe po simplepod3 -n tst
+$ kubectl describe limitrange -n tst
+$ kubectl get resourcequota quota --output=yaml -n tst
 $ kubectl describe namespaces tst
 ```
 
@@ -406,28 +419,28 @@ $ kubectl get pod |grep -i qosClass
 
 
 
-
 ---------------------------------------------------------------------------------------------------------------
 ## Labels & selector
 ---------------------------------------------------------------------------------------------------------------
 1/ Afficher les labels générées pour chaque objets (pod, namespace, limitrange, resourcequota...) :
 ```bash
-$ kubectl get pod --show-labels --namespace=tst
-$ kubectl get namespaces --show-labels --namespace=tst
-$ kubectl get limitrange --show-labels --namespace=tst
-$ kubectl get resourcequota --show-labels --namespace=tst
+$ kubectl get pod --show-labels -n tst
+$ kubectl get namespaces --show-labels
+$ kubectl get limitrange --show-labels -n tst
+$ kubectl get resourcequota --show-labels -n tst
 ```
+
 
 2/ Attribuer des labels aux objets:
 ```bash
-$ kubectl label pod simplepod1 environment=tst tier=frontend type=pod
-$ kubectl label namespace tst environment=tst type=namespace
+$ kubectl label pod simplepod1 -n tst tier=frontend type=pod
+$ kubectl label namespace tst -n tst type=namespace
 ```
 
 
 3/ Vérifier la présence des labels sur les objets (pod, namespace, limitrange, resourcequota...):
 ```bash
-$ kubectl get pod --show-labels
+$ kubectl get pod --show-labels -n tst
 ```
 
 3/ Effectuer une recherche avec le selector equality-base:
@@ -463,12 +476,6 @@ metadata:
   annotations:
     description: my frontend
   labels:
-    app.kubernetes.io/name:   myapp 
-    app.kubernetes.io/instance:   wordpress-myapp 
-    app.kubernetes.io/version:   "5.7.21" 
-    app.kubernetes.io/component:   database 
-    app.kubernetes.io/part-of:   wordpress 
-    app.kubernetes.io/managed-by:   helm
     environment: "tst"
     tier: "frontend"
 ```
