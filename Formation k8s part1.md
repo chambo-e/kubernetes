@@ -94,7 +94,8 @@ $ kubectl get namespaces --show-labels
 2/ Créer un namespace:
 ```bash
 $ kubectl create namespace tst
-$ kubectl create –f namespace-tst.yaml
+$ kubectl create –f https://github.com/dlevray/kubernetes/blob/master/TP/namespace.yaml
+      
 ```
 ```yaml  
 apiVersion: v1
