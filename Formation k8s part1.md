@@ -1164,7 +1164,7 @@ metadata:
 spec:
    podSelector:
       matchLabels:
-         role: backend
+         app: nginx
   policyTypes: 
   -   Ingress 
   -   Egress 
@@ -1185,7 +1185,11 @@ egress:
       port:   5978
 ```
 
-- La NetworkPolicy du nom de "policyfrontend", isole les pods identifiés par le label "role=frontend" dans le namespace "tst" pour le trafic entrant "Ingress" et sortant "Egress". Sur l'ensemble des pods selectionné, elle identifie ceux contenant le label "role=db" et leurs autorise les connexions entrante sur le port TCP 6379.
+
+
+- Le NetworkPolicy isole les pods identifiés par le label "role=backend" dans le namespace "tst" pour le trafic entrant "Ingress" et sortant "Egress". Sur le reste des Pods du namesapce, elle identifie ceux contenant le label "role=db" et leurs autorise les connexions entrante sur le port TCP 6379 sur les Pods avec le lable "role:backend".
+
+
 
 voir: https://kubernetes.io/docs/concepts/services-networking/network-policies/
 
