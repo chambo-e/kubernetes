@@ -4,7 +4,7 @@
 
   - [Virtual Machine](PREREQUISITES.md#virtual-machine)
   - [Docker](PREREQUISITES.md#docker)
-  - [k8s toolchain]()
+  - [k8s toolchain](PREREQUISITES.md#k8s-toolchain)
 
 - [Tools]()
 

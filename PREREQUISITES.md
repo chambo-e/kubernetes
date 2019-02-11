@@ -40,4 +40,10 @@ For the sake of simplicity we will use a local [Ubuntu Server VM](https://www.ub
 
 ## Docker
 
+Install Docker following [official doc](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
+
+Be careful about the version you install, Kubernetes does not always support the last one, you can find a reference of all the supported docker versions in Kubernetes [Releases Notes](https://kubernetes.io/docs/setup/release/notes/#external-dependencies)
+
 ## k8s toolchain
+
+Follow the [official documentation](https://kubernetes.io/docs/setup/independent/install-kubeadm/#installing-kubeadm-kubelet-and-kubectl) to install the k8s toolchain
