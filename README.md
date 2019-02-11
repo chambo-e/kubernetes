@@ -1,9 +1,9 @@
 # Formation Kubernetes (k8s)
 
-- [Prerequisites]()
+- [Prerequisites](PREREQUISITES.md)
 
-  - [Virtual Machine]()
-  - [Docker]()
+  - [Virtual Machine](PREREQUISITES.md#virtual-machine)
+  - [Docker](PREREQUISITES.md#docker)
   - [k8s toolchain]()
 
 - [Tools]()
